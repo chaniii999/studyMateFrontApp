@@ -1,4 +1,6 @@
 import apiClient from './apiClient';
+import { demoUtils } from '../config/demoConfig';
+import { demoTimerService } from './demoService';
 import {
   Timer,
   TimerRequest,
@@ -15,6 +17,12 @@ class TimerService {
    * 타이머 시작
    */
   async startTimer(timerData: TimerRequest): Promise<TimerResponse> {
+    // 데모 모드인 경우 데모 서비스 사용
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 타이머 시작 시뮬레이션');
+      return demoTimerService.startTimer(timerData);
+    }
+
     try {
       const response = await apiClient.post<TimerResponse>('/timer/start', timerData);
       
@@ -33,6 +41,17 @@ class TimerService {
    * 타이머 정지
    */
   async stopTimer(): Promise<TimerResponse> {
+    // 데모 모드인 경우 데모 서비스 사용
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 타이머 정지 시뮬레이션');
+      const sessions = await demoTimerService.getTimerHistory();
+      const currentSession = sessions.find(s => !s.endTime);
+      if (currentSession) {
+        return demoTimerService.stopTimer(currentSession.id);
+      }
+      throw new Error('진행 중인 타이머가 없습니다.');
+    }
+
     try {
       const response = await apiClient.post<TimerResponse>('/timer/stop');
       
@@ -51,6 +70,22 @@ class TimerService {
    * 타이머 일시정지
    */
   async pauseTimer(): Promise<TimerResponse> {
+    // 데모 모드인 경우 시뮬레이션
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 타이머 일시정지 시뮬레이션');
+      return demoUtils.simulateApiCall({
+        success: true,
+        message: '타이머가 일시정지되었습니다.',
+        status: 'PAUSED',
+        remainingTime: 1200,
+        timerType: 'STUDY',
+        userNickname: '데모사용자',
+        studyMinutes: 25,
+        breakMinutes: 5,
+        cycleCount: 1
+      });
+    }
+
     try {
       const response = await apiClient.post<TimerResponse>('/timer/pause');
       
@@ -69,6 +104,22 @@ class TimerService {
    * 타이머 재개
    */
   async resumeTimer(): Promise<TimerResponse> {
+    // 데모 모드인 경우 시뮬레이션
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 타이머 재개 시뮬레이션');
+      return demoUtils.simulateApiCall({
+        success: true,
+        message: '타이머가 재개되었습니다.',
+        status: 'STARTED',
+        remainingTime: 1200,
+        timerType: 'STUDY',
+        userNickname: '데모사용자',
+        studyMinutes: 25,
+        breakMinutes: 5,
+        cycleCount: 1
+      });
+    }
+
     try {
       const response = await apiClient.post<TimerResponse>('/timer/resume');
       
@@ -87,6 +138,22 @@ class TimerService {
    * 현재 타이머 상태 조회
    */
   async getCurrentTimer(): Promise<TimerResponse> {
+    // 데모 모드인 경우 시뮬레이션
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 현재 타이머 상태 조회 시뮬레이션');
+      return demoUtils.simulateApiCall({
+        success: true,
+        message: '현재 타이머 상태',
+        status: 'STOPPED',
+        remainingTime: 0,
+        timerType: 'STUDY',
+        userNickname: '데모사용자',
+        studyMinutes: 25,
+        breakMinutes: 5,
+        cycleCount: 0
+      });
+    }
+
     try {
       const response = await apiClient.get<TimerResponse>('/timer/current');
       
@@ -105,6 +172,21 @@ class TimerService {
    * 타이머 히스토리 조회
    */
   async getTimerHistory(filter?: TimerHistoryFilter): Promise<PaginatedResponse<Timer>> {
+    // 데모 모드인 경우 데모 서비스 사용
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 타이머 히스토리 조회 시뮬레이션');
+      const sessions = await demoTimerService.getTimerHistory();
+      return demoUtils.simulateApiCall({
+        content: sessions,
+        totalElements: sessions.length,
+        totalPages: 1,
+        currentPage: 1,
+        size: 10,
+        hasNext: false,
+        hasPrevious: false
+      });
+    }
+
     try {
       const params = new URLSearchParams();
       
@@ -132,6 +214,12 @@ class TimerService {
    * 타이머 통계 조회
    */
   async getTimerStatistics(dateRange?: DateRange): Promise<TimerStatistics> {
+    // 데모 모드인 경우 데모 서비스 사용
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 타이머 통계 조회 시뮬레이션');
+      return demoTimerService.getTimerStatistics();
+    }
+
     try {
       const params = new URLSearchParams();
       
@@ -155,6 +243,17 @@ class TimerService {
    * 특정 타이머 세션 조회
    */
   async getTimerById(timerId: number): Promise<Timer> {
+    // 데모 모드인 경우 데모 서비스 사용
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 특정 타이머 세션 조회 시뮬레이션');
+      const sessions = await demoTimerService.getTimerHistory();
+      const session = sessions.find(s => s.id === timerId);
+      if (!session) {
+        throw new Error('타이머 세션을 찾을 수 없습니다.');
+      }
+      return demoUtils.simulateApiCall(session);
+    }
+
     try {
       const response = await apiClient.get<Timer>(`/timer/${timerId}`);
       
@@ -173,6 +272,18 @@ class TimerService {
    * 타이머 세션 업데이트 (요약 등)
    */
   async updateTimer(timerId: number, updateData: Partial<Timer>): Promise<Timer> {
+    // 데모 모드인 경우 시뮬레이션
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 타이머 세션 업데이트 시뮬레이션');
+      const sessions = await demoTimerService.getTimerHistory();
+      const session = sessions.find(s => s.id === timerId);
+      if (!session) {
+        throw new Error('타이머 세션을 찾을 수 없습니다.');
+      }
+      const updatedSession = { ...session, ...updateData };
+      return demoUtils.simulateApiCall(updatedSession);
+    }
+
     try {
       const response = await apiClient.put<Timer>(`/timer/${timerId}`, updateData);
       
@@ -191,6 +302,12 @@ class TimerService {
    * 타이머 세션 삭제
    */
   async deleteTimer(timerId: number): Promise<void> {
+    // 데모 모드인 경우 시뮬레이션
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 타이머 세션 삭제 시뮬레이션');
+      return demoUtils.simulateApiCall(undefined);
+    }
+
     try {
       const response = await apiClient.delete(`/timer/${timerId}`);
       

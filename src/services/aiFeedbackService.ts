@@ -1,4 +1,6 @@
 import apiClient from './apiClient';
+import { demoUtils } from '../config/demoConfig';
+import { demoAIFeedbackService } from './demoService';
 import {
   AIFeedback,
   DailyAIFeedback,
@@ -16,6 +18,21 @@ class AIFeedbackService {
    * AI 피드백 목록 조회
    */
   async getAIFeedbacks(filter?: AIFeedbackFilter): Promise<PaginatedResponse<AIFeedback>> {
+    // 데모 모드인 경우 데모 서비스 사용
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: AI 피드백 목록 조회 시뮬레이션');
+      const feedbacks = await demoAIFeedbackService.getFeedbacks();
+      return demoUtils.simulateApiCall({
+        content: feedbacks,
+        totalElements: feedbacks.length,
+        totalPages: 1,
+        currentPage: 1,
+        size: 10,
+        hasNext: false,
+        hasPrevious: false
+      });
+    }
+
     try {
       const params = new URLSearchParams();
       
@@ -42,6 +59,29 @@ class AIFeedbackService {
    * 일간 AI 피드백 조회
    */
   async getDailyFeedback(date: string): Promise<DailyAIFeedback> {
+    // 데모 모드인 경우 시뮬레이션
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 일간 AI 피드백 조회 시뮬레이션');
+      return demoUtils.simulateApiCall({
+        id: 'daily-1',
+        period: 'daily',
+        date,
+        summary: '오늘은 React Native 학습에 집중하셨네요!',
+        insights: ['React Native 학습에 25분 집중', '목표 시간 달성률 100%'],
+        recommendations: ['내일은 더 긴 세션으로 도전해보세요'],
+        createdAt: demoUtils.getCurrentTimeString(),
+        updatedAt: demoUtils.getCurrentTimeString(),
+        stats: {
+          totalStudyTime: 150,
+          totalSessions: 3,
+          averageFocusLevel: 4.2,
+          mostProductiveTime: '오전 9-11시',
+          topTopics: ['React Native', '알고리즘'],
+          completionRate: 85
+        }
+      });
+    }
+
     try {
       const response = await apiClient.get<DailyAIFeedback>(`/feedback/daily?date=${date}`);
       
@@ -60,6 +100,31 @@ class AIFeedbackService {
    * 주간 AI 피드백 조회
    */
   async getWeeklyFeedback(weekStart: string): Promise<WeeklyAIFeedback> {
+    // 데모 모드인 경우 시뮬레이션
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 주간 AI 피드백 조회 시뮬레이션');
+      return demoUtils.simulateApiCall({
+        id: 'weekly-1',
+        period: 'weekly',
+        weekStart,
+        weekEnd: '2024-01-21',
+        summary: '이번 주는 알고리즘 문제 풀이에 많은 시간을 투자하셨습니다.',
+        insights: ['알고리즘 학습에 600분 투자', '주간 목표 달성률 85%'],
+        recommendations: ['다음 주에는 새로운 주제도 도전해보세요'],
+        createdAt: demoUtils.getCurrentTimeString(),
+        updatedAt: demoUtils.getCurrentTimeString(),
+        stats: {
+          totalStudyTime: 600,
+          averageDailyStudyTime: 85,
+          totalSessions: 12,
+          mostProductiveDay: '수요일',
+          studyStreak: 5,
+          goalAchievement: 85,
+          topTopics: ['알고리즘', 'React Native']
+        }
+      });
+    }
+
     try {
       const response = await apiClient.get<WeeklyAIFeedback>(`/feedback/weekly?weekStart=${weekStart}`);
       
@@ -78,6 +143,31 @@ class AIFeedbackService {
    * 월간 AI 피드백 조회
    */
   async getMonthlyFeedback(month: string): Promise<MonthlyAIFeedback> {
+    // 데모 모드인 경우 시뮬레이션
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 월간 AI 피드백 조회 시뮬레이션');
+      return demoUtils.simulateApiCall({
+        id: 'monthly-1',
+        period: 'monthly',
+        month,
+        summary: '1월 한 달간 정말 열심히 학습하셨습니다!',
+        insights: ['총 1350분 학습 시간 달성', '다양한 분야에 균형있게 투자'],
+        recommendations: ['2월에는 더 구체적인 목표를 세워보세요'],
+        createdAt: demoUtils.getCurrentTimeString(),
+        updatedAt: demoUtils.getCurrentTimeString(),
+        stats: {
+          totalStudyTime: 1350,
+          averageDailyStudyTime: 45,
+          totalSessions: 45,
+          mostProductiveWeek: '1월 2주차',
+          studyStreak: 15,
+          goalAchievement: 90,
+          topTopics: ['React Native', '알고리즘', '영어'],
+          improvementAreas: ['복습 시간 증가', '새로운 주제 도전']
+        }
+      });
+    }
+
     try {
       const response = await apiClient.get<MonthlyAIFeedback>(`/feedback/monthly?month=${month}`);
       
@@ -96,6 +186,12 @@ class AIFeedbackService {
    * AI 피드백 생성 요청
    */
   async generateAIFeedback(request: GenerateAIFeedbackRequest): Promise<AIFeedback> {
+    // 데모 모드인 경우 데모 서비스 사용
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: AI 피드백 생성 시뮬레이션');
+      return demoAIFeedbackService.generateFeedback(request);
+    }
+
     try {
       const response = await apiClient.post<AIFeedback>('/feedback/generate', request);
       
@@ -114,6 +210,12 @@ class AIFeedbackService {
    * 특정 AI 피드백 조회
    */
   async getAIFeedbackById(feedbackId: string): Promise<AIFeedback> {
+    // 데모 모드인 경우 데모 서비스 사용
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 특정 AI 피드백 조회 시뮬레이션');
+      return demoAIFeedbackService.getFeedback(feedbackId);
+    }
+
     try {
       const response = await apiClient.get<AIFeedback>(`/feedback/${feedbackId}`);
       
@@ -132,6 +234,12 @@ class AIFeedbackService {
    * AI 피드백 삭제
    */
   async deleteAIFeedback(feedbackId: string): Promise<void> {
+    // 데모 모드인 경우 시뮬레이션
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: AI 피드백 삭제 시뮬레이션');
+      return demoUtils.simulateApiCall(undefined);
+    }
+
     try {
       const response = await apiClient.delete(`/feedback/${feedbackId}`);
       
@@ -148,6 +256,19 @@ class AIFeedbackService {
    * AI 피드백 통계 조회
    */
   async getAIFeedbackStatistics(): Promise<AIFeedbackStatistics> {
+    // 데모 모드인 경우 시뮬레이션
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: AI 피드백 통계 조회 시뮬레이션');
+      return demoUtils.simulateApiCall({
+        totalFeedbacks: 15,
+        averageInsightsPerFeedback: 3.2,
+        averageRecommendationsPerFeedback: 2.8,
+        mostCommonInsights: ['학습 시간 증가', '목표 달성률 향상'],
+        mostCommonRecommendations: ['더 구체적인 목표 설정', '복습 시간 증가'],
+        feedbackTrend: 'improving'
+      });
+    }
+
     try {
       const response = await apiClient.get<AIFeedbackStatistics>('/feedback/statistics');
       
@@ -166,6 +287,22 @@ class AIFeedbackService {
    * AI 피드백 설정 조회
    */
   async getAIFeedbackSettings(): Promise<AIFeedbackSettings> {
+    // 데모 모드인 경우 시뮬레이션
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: AI 피드백 설정 조회 시뮬레이션');
+      return demoUtils.simulateApiCall({
+        enabled: true,
+        autoGenerate: true,
+        generationSchedule: {
+          daily: true,
+          weekly: true,
+          monthly: true
+        },
+        notificationEnabled: true,
+        language: 'ko'
+      });
+    }
+
     try {
       const response = await apiClient.get<AIFeedbackSettings>('/feedback/settings');
       
@@ -184,6 +321,14 @@ class AIFeedbackService {
    * AI 피드백 설정 업데이트
    */
   async updateAIFeedbackSettings(settings: Partial<AIFeedbackSettings>): Promise<AIFeedbackSettings> {
+    // 데모 모드인 경우 시뮬레이션
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: AI 피드백 설정 업데이트 시뮬레이션');
+      const currentSettings = await this.getAIFeedbackSettings();
+      const updatedSettings = { ...currentSettings, ...settings };
+      return demoUtils.simulateApiCall(updatedSettings);
+    }
+
     try {
       const response = await apiClient.put<AIFeedbackSettings>('/feedback/settings', settings);
       

@@ -36,5 +36,5 @@ export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 
 // 모든 슬라이스 export
-export * from './slices';
+// export * from './slices';
 export * from './hooks'; 

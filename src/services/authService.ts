@@ -1,4 +1,6 @@
 import apiClient from './apiClient';
+import { demoUtils } from '../config/demoConfig';
+import { demoAuthService } from './demoService';
 import {
   SignInRequest,
   SignUpRequest,
@@ -15,6 +17,12 @@ class AuthService {
    * 로그인
    */
   async signIn(credentials: SignInRequest): Promise<TokenResponse> {
+    // 데모 모드인 경우 데모 서비스 사용
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 로그인 시뮬레이션');
+      return demoAuthService.signIn(credentials);
+    }
+
     try {
       const response = await apiClient.post<TokenResponse>('/auth/sign-in', credentials);
       
@@ -35,6 +43,13 @@ class AuthService {
    * 회원가입
    */
   async signUp(userData: SignUpRequest): Promise<void> {
+    // 데모 모드인 경우 데모 서비스 사용
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 회원가입 시뮬레이션');
+      await demoAuthService.signUp(userData);
+      return;
+    }
+
     try {
       const response = await apiClient.post('/auth/sign-up', userData);
       
@@ -51,6 +66,12 @@ class AuthService {
    * 이메일 인증 코드 발송
    */
   async sendVerificationCode(email: string): Promise<void> {
+    // 데모 모드인 경우 시뮬레이션
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 인증 코드 발송 시뮬레이션');
+      return demoUtils.simulateApiCall(undefined);
+    }
+
     try {
       const request: SendCodeRequest = { email };
       const response = await apiClient.post('/auth/send-code', request);
@@ -68,6 +89,12 @@ class AuthService {
    * 이메일 인증 코드 확인
    */
   async verifyCode(email: string, code: string): Promise<void> {
+    // 데모 모드인 경우 시뮬레이션
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 인증 코드 확인 시뮬레이션');
+      return demoUtils.simulateApiCall(undefined);
+    }
+
     try {
       const request: VerifyCodeRequest = { email, code };
       const response = await apiClient.post('/auth/verify-code', request);
@@ -85,6 +112,17 @@ class AuthService {
    * 토큰 갱신
    */
   async refreshToken(refreshToken: string): Promise<TokenResponse> {
+    // 데모 모드인 경우 데모 서비스 사용
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 토큰 갱신 시뮬레이션');
+      return demoUtils.simulateApiCall({
+        accessToken: `demo_token_${Date.now()}`,
+        refreshToken: `demo_refresh_${Date.now()}`,
+        tokenType: 'Bearer',
+        expiresIn: 3600
+      });
+    }
+
     try {
       const request: RefreshTokenRequest = { refreshToken };
       const response = await apiClient.post<TokenResponse>('/auth/refresh', request);
@@ -106,6 +144,12 @@ class AuthService {
    * 로그아웃
    */
   async logout(): Promise<void> {
+    // 데모 모드인 경우 데모 서비스 사용
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 로그아웃 시뮬레이션');
+      return demoAuthService.signOut();
+    }
+
     try {
       await apiClient.logout();
     } catch (error) {
@@ -118,6 +162,12 @@ class AuthService {
    * 인증 상태 확인
    */
   async isAuthenticated(): Promise<boolean> {
+    // 데모 모드인 경우 데모 서비스 사용
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 인증 상태 확인 시뮬레이션');
+      return demoUtils.simulateApiCall(true);
+    }
+
     try {
       return await apiClient.isAuthenticated();
     } catch (error) {
@@ -130,6 +180,12 @@ class AuthService {
    * 현재 사용자 정보 조회
    */
   async getCurrentUser(): Promise<User> {
+    // 데모 모드인 경우 데모 서비스 사용
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 사용자 정보 조회 시뮬레이션');
+      return demoAuthService.getCurrentUser();
+    }
+
     try {
       const response = await apiClient.get<User>('/users/me');
       
@@ -148,6 +204,14 @@ class AuthService {
    * 사용자 정보 업데이트
    */
   async updateUser(userData: Partial<User>): Promise<User> {
+    // 데모 모드인 경우 시뮬레이션
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 사용자 정보 업데이트 시뮬레이션');
+      const currentUser = await demoAuthService.getCurrentUser();
+      const updatedUser = { ...currentUser, ...userData };
+      return demoUtils.simulateApiCall(updatedUser);
+    }
+
     try {
       const response = await apiClient.put<User>('/users/me', userData);
       
@@ -166,6 +230,12 @@ class AuthService {
    * 비밀번호 변경 (백엔드에 해당 API가 있다면)
    */
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    // 데모 모드인 경우 시뮬레이션
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 비밀번호 변경 시뮬레이션');
+      return demoUtils.simulateApiCall(undefined);
+    }
+
     try {
       const response = await apiClient.post('/users/change-password', {
         currentPassword,
@@ -185,6 +255,13 @@ class AuthService {
    * 계정 삭제 (백엔드에 해당 API가 있다면)
    */
   async deleteAccount(password: string): Promise<void> {
+    // 데모 모드인 경우 시뮬레이션
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 계정 삭제 시뮬레이션');
+      await demoAuthService.signOut();
+      return demoUtils.simulateApiCall(undefined);
+    }
+
     try {
       const response = await apiClient.post('/users/delete-account', { password });
       
