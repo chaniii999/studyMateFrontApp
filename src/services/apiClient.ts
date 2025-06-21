@@ -38,6 +38,7 @@ class ApiClient {
   }> = [];
   private memoryStorage: MemoryStorage;
   private useMemoryStorage = false;
+  private static instance: ApiClient | null = null;
 
   constructor() {
     this.client = axios.create({
@@ -49,6 +50,23 @@ class ApiClient {
     });
     this.memoryStorage = new MemoryStorage();
     this.setupInterceptors();
+  }
+
+  // 싱글톤 패턴으로 인스턴스 관리
+  static getInstance(): ApiClient {
+    if (!ApiClient.instance) {
+      ApiClient.instance = new ApiClient();
+    }
+    return ApiClient.instance;
+  }
+
+  // 메모리 저장소 초기화 (캐시 삭제용)
+  static clearMemoryStorage(): void {
+    if (ApiClient.instance) {
+      ApiClient.instance.memoryStorage = new MemoryStorage();
+      ApiClient.instance.useMemoryStorage = false;
+      console.log('메모리 저장소 초기화 완료');
+    }
   }
 
   private setupInterceptors() {
@@ -290,4 +308,5 @@ class ApiClient {
 
 // 싱글톤 인스턴스 생성
 export const apiClient = new ApiClient();
+export { ApiClient };
 export default apiClient; 

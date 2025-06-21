@@ -12,6 +12,8 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { demoUtils, demoModeManager } from '../../config/demoConfig';
 import { theme } from '../../theme';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ApiClient } from '../../services/apiClient';
 
 const SettingsScreen: React.FC = () => {
   const navigation = useNavigation();
@@ -71,7 +73,7 @@ const SettingsScreen: React.FC = () => {
     );
   };
 
-  const handleClearCache = () => {
+  const handleClearCache = async () => {
     Alert.alert(
       '캐시 삭제',
       '앱 캐시를 삭제하시겠습니까?',
@@ -80,9 +82,20 @@ const SettingsScreen: React.FC = () => {
         {
           text: '삭제',
           style: 'destructive',
-          onPress: () => {
-            // TODO: 실제 캐시 삭제 로직 구현
-            Alert.alert('완료', '캐시가 삭제되었습니다.');
+          onPress: async () => {
+            try {
+              // AsyncStorage 전체 삭제
+              await AsyncStorage.clear();
+              console.log('AsyncStorage 캐시 삭제 완료');
+              
+              // ApiClient 메모리 저장소 초기화
+              ApiClient.clearMemoryStorage();
+              
+              Alert.alert('완료', '캐시가 삭제되었습니다.');
+            } catch (error) {
+              console.error('캐시 삭제 실패:', error);
+              Alert.alert('오류', '캐시 삭제 중 오류가 발생했습니다.');
+            }
           }
         }
       ]

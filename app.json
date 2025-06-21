@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "studyMateFrontApp",
-    "slug": "studyMateFrontApp",
+    "name": "StudyMate",
+    "slug": "studymate",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -10,12 +10,18 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "jsEngine": "jsc"
+      "bundleIdentifier": "com.studymate.app"
     },
     "android": {
-      "jsEngine": "jsc"
+      "package": "com.studymate.app"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id"
+      }
+    },
+    "experiments": {
+      "tsconfigPaths": true
     }
-  },
-  "name": "studyMateFrontApp",
-  "displayName": "studyMateFrontApp"
+  }
 }
