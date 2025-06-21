@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ApiError, ApiResponse } from '../types';
 
 // API 기본 설정
-const API_BASE_URL = 'http://localhost:8080/api'; // 개발 환경
+const API_BASE_URL = 'http://192.168.0.7:8080/api'; // 개발 환경
 // const API_BASE_URL = 'https://your-production-api.com/api'; // 프로덕션 환경
 
 // 토큰 저장 키
@@ -133,18 +133,24 @@ class ApiClient {
   // 토큰 관리 메서드들
   private async getAccessToken(): Promise<string | null> {
     try {
-      return await AsyncStorage.getItem(TOKEN_KEYS.ACCESS_TOKEN);
+      const token = await AsyncStorage.getItem(TOKEN_KEYS.ACCESS_TOKEN);
+      console.log('Access token 조회 성공:', token ? '토큰 존재' : '토큰 없음');
+      return token;
     } catch (error) {
       console.error('Access token 조회 실패:', error);
+      // AsyncStorage 오류 시 빈 값 반환
       return null;
     }
   }
 
   private async getRefreshToken(): Promise<string | null> {
     try {
-      return await AsyncStorage.getItem(TOKEN_KEYS.REFRESH_TOKEN);
+      const token = await AsyncStorage.getItem(TOKEN_KEYS.REFRESH_TOKEN);
+      console.log('Refresh token 조회 성공:', token ? '토큰 존재' : '토큰 없음');
+      return token;
     } catch (error) {
       console.error('Refresh token 조회 실패:', error);
+      // AsyncStorage 오류 시 빈 값 반환
       return null;
     }
   }
@@ -155,8 +161,10 @@ class ApiClient {
         AsyncStorage.setItem(TOKEN_KEYS.ACCESS_TOKEN, accessToken),
         AsyncStorage.setItem(TOKEN_KEYS.REFRESH_TOKEN, refreshToken),
       ]);
+      console.log('토큰 저장 성공');
     } catch (error) {
       console.error('토큰 저장 실패:', error);
+      // AsyncStorage 오류 시에도 계속 진행
     }
   }
 
@@ -166,8 +174,10 @@ class ApiClient {
         AsyncStorage.removeItem(TOKEN_KEYS.ACCESS_TOKEN),
         AsyncStorage.removeItem(TOKEN_KEYS.REFRESH_TOKEN),
       ]);
+      console.log('토큰 삭제 성공');
     } catch (error) {
       console.error('토큰 삭제 실패:', error);
+      // AsyncStorage 오류 시에도 계속 진행
     }
   }
 

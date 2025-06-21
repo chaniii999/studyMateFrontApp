@@ -2,10 +2,10 @@ import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { AuthStackParamList } from './types';
 import LoginScreen from '../screens/auth/LoginScreen';
+import SignUpScreen from '../screens/auth/SignUpScreen';
 
 // 임시 화면 컴포넌트들 (나중에 실제 화면으로 교체)
 const WelcomeScreen = () => null;
-const SignUpScreen = () => null;
 const ForgotPasswordScreen = () => null;
 const EmailVerificationScreen = () => null;
 

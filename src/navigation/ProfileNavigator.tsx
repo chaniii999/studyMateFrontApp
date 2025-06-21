@@ -1,11 +1,11 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { ProfileStackParamList } from './types';
+import ProfileScreen from '../screens/profile/ProfileScreen';
+import SettingsScreen from '../screens/settings/SettingsScreen';
 
 // 임시 화면 컴포넌트들 (나중에 실제 화면으로 교체)
-const ProfileScreen = () => null;
 const EditProfileScreen = () => null;
-const SettingsScreen = () => null;
 const NotificationsScreen = () => null;
 const PrivacyScreen = () => null;
 const AboutScreen = () => null;

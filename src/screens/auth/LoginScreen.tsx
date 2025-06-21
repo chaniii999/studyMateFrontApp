@@ -10,9 +10,14 @@ import {
   Alert,
   TouchableOpacity,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { AuthStackParamList } from '../../navigation/types';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { signIn, selectIsLoading, selectError } from '../../store/slices/authSlice';
 import { theme } from '../../theme';
+
+type LoginScreenNavigationProp = StackNavigationProp<AuthStackParamList, 'SignIn'>;
 
 // 임시 컴포넌트들 (나중에 실제 컴포넌트로 교체)
 const Button = ({ title, onPress, loading, style }: any) => (
@@ -42,6 +47,7 @@ const Input = ({ label, value, onChangeText, placeholder, secureTextEntry, keybo
 );
 
 const LoginScreen: React.FC = () => {
+  const navigation = useNavigation<LoginScreenNavigationProp>();
   const dispatch = useAppDispatch();
   const isLoading = useAppSelector(selectIsLoading);
   const error = useAppSelector(selectError);
@@ -78,6 +84,10 @@ const LoginScreen: React.FC = () => {
         Alert.alert('로그인 실패', error.message || '로그인에 실패했습니다.');
       }
     }
+  };
+
+  const handleSignUp = () => {
+    navigation.navigate('SignUp');
   };
 
   return (
@@ -121,12 +131,20 @@ const LoginScreen: React.FC = () => {
               onPress={handleLogin}
               loading={isLoading}
             />
+
+            <TouchableOpacity
+              style={styles.signUpButton}
+              onPress={handleSignUp}
+              disabled={isLoading}
+            >
+              <Text style={styles.signUpButtonText}>회원가입</Text>
+            </TouchableOpacity>
           </View>
 
           {/* 추가 옵션 */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>
-              계정이 없으신가요? <Text style={styles.linkText}>회원가입</Text>
+              계정이 없으신가요? <Text style={styles.linkText} onPress={handleSignUp}>회원가입</Text>
             </Text>
             <Text style={styles.linkText}>비밀번호 찾기</Text>
           </View>
@@ -203,6 +221,20 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: theme.colors.text.inverse,
+    fontSize: theme.typography.fontSize.lg,
+    fontWeight: '600' as const,
+  },
+  signUpButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: theme.colors.primary[500],
+    paddingVertical: theme.spacing[4],
+    borderRadius: theme.borderRadius.base,
+    alignItems: 'center',
+    marginTop: theme.spacing[3],
+  },
+  signUpButtonText: {
+    color: theme.colors.primary[500],
     fontSize: theme.typography.fontSize.lg,
     fontWeight: '600' as const,
   },

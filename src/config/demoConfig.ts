@@ -16,7 +16,7 @@ export interface DemoConfig {
 
 // 기본 데모 설정
 export const defaultDemoConfig: DemoConfig = {
-  isEnabled: __DEV__, // 개발 모드에서만 기본 활성화
+  isEnabled: false, // 기본적으로 비활성화
   showDemoIndicator: true,
   networkDelay: {
     min: 200,
