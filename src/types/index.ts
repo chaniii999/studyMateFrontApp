@@ -5,15 +5,25 @@ export * from './studyTopic';
 export * from './schedule';
 export * from './aiFeedback';
 export * from './common';
+export * from './auth';
 
 // 주요 타입들을 다시 export하여 편의성 제공
 export type {
   User,
+  CreateUserRequest,
+  UpdateUserRequest,
+  ApiResponse,
+} from './user';
+
+export type {
   SignInRequest,
   SignUpRequest,
   TokenResponse,
-  ApiResponse,
-} from './user';
+  LoginResponse,
+  SendCodeRequest,
+  VerifyCodeRequest,
+  RefreshTokenRequest,
+} from './auth';
 
 export type {
   Timer,

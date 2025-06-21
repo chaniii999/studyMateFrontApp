@@ -142,26 +142,6 @@ const SettingsScreen: React.FC = () => {
       </View>
 
       <ScrollView style={styles.content}>
-        {/* 개발자 옵션 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>개발자 옵션</Text>
-          
-          {renderSettingItem(
-            '데모 모드',
-            '백엔드 서버 없이 앱을 테스트할 수 있습니다',
-            isDemoMode,
-            handleDemoModeToggle
-          )}
-
-          {renderSettingItem(
-            '데모 인디케이터',
-            '화면 상단에 데모 모드 표시',
-            showDemoIndicator,
-            handleDemoIndicatorToggle,
-            !isDemoMode
-          )}
-        </View>
-
         {/* 앱 관리 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>앱 관리</Text>
@@ -203,6 +183,26 @@ const SettingsScreen: React.FC = () => {
               {isDemoMode ? '데모 모드' : '프로덕션 모드'}
             </Text>
           </View>
+        </View>
+
+        {/* 개발자 옵션 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>개발자 옵션</Text>
+          
+          {renderSettingItem(
+            '데모 모드',
+            '백엔드 서버 없이 앱을 테스트할 수 있습니다',
+            isDemoMode,
+            handleDemoModeToggle
+          )}
+
+          {renderSettingItem(
+            '데모 인디케이터',
+            '화면 상단에 데모 모드 표시',
+            showDemoIndicator,
+            handleDemoIndicatorToggle,
+            !isDemoMode
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

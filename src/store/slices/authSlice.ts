@@ -43,20 +43,7 @@ export const signIn = createAsyncThunk(
   'auth/signIn',
   async (credentials: SignInRequest, { rejectWithValue }) => {
     try {
-      const tokenResponse = await authService.signIn(credentials);
-      
-      // 백엔드에서 사용자 정보를 가져올 수 없는 경우를 대비해 기본 정보 설정
-      const user: User = {
-        id: '0', // 임시 ID
-        email: credentials.email,
-        nickname: credentials.email.split('@')[0], // 이메일에서 닉네임 추출
-        age: 0,
-        sex: '남',
-        totalStudyTime: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-      
+      const { tokenResponse, user } = await authService.signInWithUserInfo(credentials);
       return { user, tokenResponse };
     } catch (error: any) {
       return rejectWithValue(error.message || '로그인에 실패했습니다.');

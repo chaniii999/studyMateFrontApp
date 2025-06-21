@@ -5,6 +5,7 @@ import {
   SignInRequest,
   SignUpRequest,
   TokenResponse,
+  LoginResponse,
   SendCodeRequest,
   VerifyCodeRequest,
   RefreshTokenRequest,
@@ -24,12 +25,68 @@ class AuthService {
     }
 
     try {
-      const response = await apiClient.post<TokenResponse>('/auth/sign-in', credentials);
+      const response = await apiClient.post<LoginResponse>('/auth/sign-in', credentials);
       
       if (response.success && response.data) {
         // 토큰 저장
-        await apiClient.setAuthTokens(response.data.accessToken, response.data.refreshToken);
-        return response.data;
+        await apiClient.setAuthTokens(response.data.token.accessToken, response.data.token.refreshToken);
+        
+        // TokenResponse 형태로 반환 (기존 호환성 유지)
+        return {
+          accessToken: response.data.token.accessToken,
+          refreshToken: response.data.token.refreshToken,
+          tokenType: response.data.token.tokenType,
+          expiresIn: response.data.token.accessTokenExpiresIn
+        };
+      } else {
+        throw new Error(response.message || '로그인에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('로그인 에러:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 로그인 후 사용자 정보 반환 (새로운 메서드)
+   */
+  async signInWithUserInfo(credentials: SignInRequest): Promise<{ tokenResponse: TokenResponse; user: User }> {
+    // 데모 모드인 경우 데모 서비스 사용
+    if (demoUtils.isDemoMode()) {
+      console.log('데모 모드: 로그인 시뮬레이션');
+      const tokenResponse = await demoAuthService.signIn(credentials);
+      const user = await demoAuthService.getCurrentUser();
+      return { tokenResponse, user };
+    }
+
+    try {
+      const response = await apiClient.post<LoginResponse>('/auth/sign-in', credentials);
+      
+      if (response.success && response.data) {
+        // 토큰 저장
+        await apiClient.setAuthTokens(response.data.token.accessToken, response.data.token.refreshToken);
+        
+        // TokenResponse 형태로 변환
+        const tokenResponse: TokenResponse = {
+          accessToken: response.data.token.accessToken,
+          refreshToken: response.data.token.refreshToken,
+          tokenType: response.data.token.tokenType,
+          expiresIn: response.data.token.accessTokenExpiresIn
+        };
+
+        // User 형태로 변환
+        const user: User = {
+          id: response.data.userId,
+          email: response.data.email,
+          nickname: response.data.nickname,
+          age: response.data.age,
+          sex: response.data.sex,
+          totalStudyTime: 0, // 백엔드에서 제공하지 않으므로 기본값
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        return { tokenResponse, user };
       } else {
         throw new Error(response.message || '로그인에 실패했습니다.');
       }

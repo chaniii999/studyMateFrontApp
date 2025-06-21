@@ -12,6 +12,23 @@ const TOKEN_KEYS = {
   REFRESH_TOKEN: 'refresh_token',
 } as const;
 
+// 메모리 기반 임시 저장소 (AsyncStorage 실패 시 사용)
+class MemoryStorage {
+  private storage: Map<string, string> = new Map();
+
+  async setItem(key: string, value: string): Promise<void> {
+    this.storage.set(key, value);
+  }
+
+  async getItem(key: string): Promise<string | null> {
+    return this.storage.get(key) || null;
+  }
+
+  async removeItem(key: string): Promise<void> {
+    this.storage.delete(key);
+  }
+}
+
 class ApiClient {
   private client: AxiosInstance;
   private isRefreshing = false;
@@ -19,6 +36,8 @@ class ApiClient {
     resolve: (value?: any) => void;
     reject: (error?: any) => void;
   }> = [];
+  private memoryStorage: MemoryStorage;
+  private useMemoryStorage = false;
 
   constructor() {
     this.client = axios.create({
@@ -28,7 +47,7 @@ class ApiClient {
         'Content-Type': 'application/json',
       },
     });
-
+    this.memoryStorage = new MemoryStorage();
     this.setupInterceptors();
   }
 
@@ -133,51 +152,93 @@ class ApiClient {
   // 토큰 관리 메서드들
   private async getAccessToken(): Promise<string | null> {
     try {
+      if (this.useMemoryStorage) {
+        return await this.memoryStorage.getItem(TOKEN_KEYS.ACCESS_TOKEN);
+      }
+      
       const token = await AsyncStorage.getItem(TOKEN_KEYS.ACCESS_TOKEN);
       console.log('Access token 조회 성공:', token ? '토큰 존재' : '토큰 없음');
       return token;
     } catch (error) {
       console.error('Access token 조회 실패:', error);
-      // AsyncStorage 오류 시 빈 값 반환
-      return null;
+      // AsyncStorage 오류 시 메모리 저장소로 전환
+      if (!this.useMemoryStorage) {
+        console.log('AsyncStorage 오류로 메모리 저장소로 전환');
+        this.useMemoryStorage = true;
+      }
+      return await this.memoryStorage.getItem(TOKEN_KEYS.ACCESS_TOKEN);
     }
   }
 
   private async getRefreshToken(): Promise<string | null> {
     try {
+      if (this.useMemoryStorage) {
+        return await this.memoryStorage.getItem(TOKEN_KEYS.REFRESH_TOKEN);
+      }
+      
       const token = await AsyncStorage.getItem(TOKEN_KEYS.REFRESH_TOKEN);
       console.log('Refresh token 조회 성공:', token ? '토큰 존재' : '토큰 없음');
       return token;
     } catch (error) {
       console.error('Refresh token 조회 실패:', error);
-      // AsyncStorage 오류 시 빈 값 반환
-      return null;
+      if (!this.useMemoryStorage) {
+        console.log('AsyncStorage 오류로 메모리 저장소로 전환');
+        this.useMemoryStorage = true;
+      }
+      return await this.memoryStorage.getItem(TOKEN_KEYS.REFRESH_TOKEN);
     }
   }
 
   private async setTokens(accessToken: string, refreshToken: string): Promise<void> {
     try {
+      if (this.useMemoryStorage) {
+        await Promise.all([
+          this.memoryStorage.setItem(TOKEN_KEYS.ACCESS_TOKEN, accessToken),
+          this.memoryStorage.setItem(TOKEN_KEYS.REFRESH_TOKEN, refreshToken),
+        ]);
+        console.log('토큰 저장 성공 (메모리)');
+        return;
+      }
+      
       await Promise.all([
         AsyncStorage.setItem(TOKEN_KEYS.ACCESS_TOKEN, accessToken),
         AsyncStorage.setItem(TOKEN_KEYS.REFRESH_TOKEN, refreshToken),
       ]);
-      console.log('토큰 저장 성공');
+      console.log('토큰 저장 성공 (AsyncStorage)');
     } catch (error) {
       console.error('토큰 저장 실패:', error);
-      // AsyncStorage 오류 시에도 계속 진행
+      // AsyncStorage 오류 시 메모리 저장소로 전환
+      if (!this.useMemoryStorage) {
+        console.log('AsyncStorage 오류로 메모리 저장소로 전환');
+        this.useMemoryStorage = true;
+        await this.setTokens(accessToken, refreshToken); // 재귀 호출
+      }
     }
   }
 
   private async clearTokens(): Promise<void> {
     try {
+      if (this.useMemoryStorage) {
+        await Promise.all([
+          this.memoryStorage.removeItem(TOKEN_KEYS.ACCESS_TOKEN),
+          this.memoryStorage.removeItem(TOKEN_KEYS.REFRESH_TOKEN),
+        ]);
+        console.log('토큰 삭제 성공 (메모리)');
+        return;
+      }
+      
       await Promise.all([
         AsyncStorage.removeItem(TOKEN_KEYS.ACCESS_TOKEN),
         AsyncStorage.removeItem(TOKEN_KEYS.REFRESH_TOKEN),
       ]);
-      console.log('토큰 삭제 성공');
+      console.log('토큰 삭제 성공 (AsyncStorage)');
     } catch (error) {
       console.error('토큰 삭제 실패:', error);
-      // AsyncStorage 오류 시에도 계속 진행
+      if (!this.useMemoryStorage) {
+        console.log('AsyncStorage 오류로 메모리 저장소로 전환');
+        this.useMemoryStorage = true;
+        await this.clearTokens(); // 재귀 호출
+      }
     }
   }
 
