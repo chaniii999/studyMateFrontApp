@@ -1,7 +1,9 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Platform, StyleSheet } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { MainTabParamList } from './types';
+import { theme } from '../theme';
 
 // 네비게이터들 import
 import HomeNavigator from './HomeNavigator';
@@ -9,11 +11,6 @@ import TimerNavigator from './TimerNavigator';
 import TopicsNavigator from './TopicsNavigator';
 import StatisticsNavigator from './StatisticsNavigator';
 import ProfileNavigator from './ProfileNavigator';
-
-// 임시 아이콘 컴포넌트 (나중에 실제 아이콘으로 교체)
-const TabIcon = ({ name, focused }: { name: string; focused: boolean }) => {
-  return null; // 임시로 null 반환
-};
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -27,51 +24,55 @@ const MainTabNavigator: React.FC = () => {
 
           switch (route.name) {
             case 'Home':
-              iconName = 'home';
+              iconName = focused ? 'home' : 'home-outline';
               break;
             case 'Timer':
-              iconName = 'timer';
+              iconName = focused ? 'timer' : 'timer-outline';
               break;
             case 'Topics':
-              iconName = 'book';
+              iconName = focused ? 'library' : 'library-outline';
               break;
             case 'Statistics':
-              iconName = 'bar-chart';
+              iconName = focused ? 'analytics' : 'analytics-outline';
               break;
             case 'Profile':
-              iconName = 'person';
+              iconName = focused ? 'person' : 'person-outline';
               break;
             default:
-              iconName = 'help';
+              iconName = 'help-outline';
           }
 
-          return <TabIcon name={iconName} focused={focused} />;
+          return <Icon name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#007AFF', // iOS 블루
-        tabBarInactiveTintColor: '#8E8E93', // iOS 그레이
+        tabBarActiveTintColor: theme.colors.primary[500],
+        tabBarInactiveTintColor: theme.colors.text.secondary,
         tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopWidth: 0.5,
-          borderTopColor: '#C6C6C8',
-          paddingBottom: Platform.OS === 'ios' ? 20 : 10,
-          paddingTop: 10,
-          height: Platform.OS === 'ios' ? 88 : 60,
-          shadowColor: '#000',
+          backgroundColor: theme.colors.background.primary,
+          borderTopWidth: 1,
+          borderTopColor: theme.colors.border.light,
+          paddingBottom: Platform.OS === 'ios' ? 34 : 10, // iPhone 16 Safe Area
+          paddingTop: 8,
+          height: Platform.OS === 'ios' ? 102 : 68, // iPhone 16 높이 조정
+          shadowColor: theme.colors.text.primary,
           shadowOffset: {
             width: 0,
             height: -2,
           },
           shadowOpacity: 0.1,
-          shadowRadius: 3,
+          shadowRadius: 8,
           elevation: 10,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '500',
-          marginTop: 4,
+          fontSize: 11,
+          fontWeight: '600',
+          marginTop: 2,
+          marginBottom: Platform.OS === 'ios' ? 0 : 4,
         },
         tabBarIconStyle: {
           marginTop: 4,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 4,
         },
       })}
     >
@@ -118,13 +119,5 @@ const MainTabNavigator: React.FC = () => {
     </Tab.Navigator>
   );
 };
-
-const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 0.5,
-    borderTopColor: '#C6C6C8',
-  },
-});
 
 export default MainTabNavigator; 

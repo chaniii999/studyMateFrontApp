@@ -25,12 +25,25 @@ export const checkAuthStatus = createAsyncThunk(
   'auth/checkStatus',
   async (_, { rejectWithValue }) => {
     try {
-      const isAuthenticated = await authService.isAuthenticated();
-      if (isAuthenticated) {
-        const user = await authService.getCurrentUser();
-        return { isAuthenticated, user };
+      // 먼저 토큰이 있는지 확인
+      const hasToken = await authService.isAuthenticated();
+      
+      if (!hasToken) {
+        console.log('토큰이 없음, 인증되지 않은 상태');
+        return { isAuthenticated: false, user: null };
       }
-      return { isAuthenticated: false, user: null };
+
+      // 토큰이 있으면 실제로 유효한지 확인 (백엔드 API 호출)
+      try {
+        const user = await authService.getCurrentUser();
+        console.log('토큰 유효, 사용자 정보 조회 성공');
+        return { isAuthenticated: true, user };
+      } catch (userError) {
+        console.log('토큰이 있지만 사용자 정보 조회 실패, 인증되지 않은 상태로 처리:', userError);
+        // 토큰이 있지만 사용자 정보 조회에 실패하면 토큰을 삭제하고 인증되지 않은 상태로 처리
+        await authService.logout();
+        return { isAuthenticated: false, user: null };
+      }
     } catch (error: any) {
       // 백엔드 서버가 없을 때는 인증되지 않은 상태로 처리
       console.log('백엔드 서버 연결 실패, 인증되지 않은 상태로 처리:', error.message);

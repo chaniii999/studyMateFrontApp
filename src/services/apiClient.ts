@@ -275,8 +275,14 @@ class ApiClient {
   }
 
   public async isAuthenticated(): Promise<boolean> {
-    const token = await this.getAccessToken();
-    return !!token;
+    try {
+      const token = await this.getAccessToken();
+      // 토큰이 존재하는지만 확인 (실제 API 호출은 하지 않음)
+      return !!token;
+    } catch (error) {
+      console.error('토큰 확인 실패:', error);
+      return false;
+    }
   }
 
   // HTTP 메서드들

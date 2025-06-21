@@ -216,7 +216,7 @@ class AuthService {
   }
 
   /**
-   * 인증 상태 확인
+   * 인증 상태 확인 (토큰 존재 여부만 확인)
    */
   async isAuthenticated(): Promise<boolean> {
     // 데모 모드인 경우 데모 서비스 사용
@@ -226,6 +226,7 @@ class AuthService {
     }
 
     try {
+      // 토큰이 존재하는지만 확인 (실제 API 호출은 하지 않음)
       return await apiClient.isAuthenticated();
     } catch (error) {
       console.error('인증 상태 확인 에러:', error);
