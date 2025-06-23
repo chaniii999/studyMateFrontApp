@@ -1,9 +1,9 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { HomeStackParamList } from './types';
+ㄱimport HomeScreen from '../screens/HomeScreen';
 
 // 임시 화면 컴포넌트들 (나중에 실제 화면으로 교체)
-const HomeScreen = () => null;
 const DashboardScreen = () => null;
 const QuickStartScreen = () => null;
 const NotificationsScreen = () => null;
