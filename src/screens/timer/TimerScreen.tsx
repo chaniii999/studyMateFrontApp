@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, Alert } from 'react-native';
 import { theme } from '../../theme';
 
 const STUDY_MINUTES = 25;
@@ -18,6 +18,7 @@ const TimerScreen: React.FC = () => {
   const [remaining, setRemaining] = useState(STUDY_MINUTES * 60);
   const [cycle, setCycle] = useState(1);
   const animatedValue = useRef(new Animated.Value(0)).current;
+  const [startTime, setStartTime] = useState<Date | null>(null);
 
   // 타이머 진행
   useEffect(() => {
@@ -48,6 +49,9 @@ const TimerScreen: React.FC = () => {
   }, [remaining, isStudy]);
 
   const handleStartPause = () => {
+    if (!isRunning && !startTime) {
+      setStartTime(new Date());
+    }
     setIsRunning((prev) => !prev);
   };
 
@@ -67,6 +71,54 @@ const TimerScreen: React.FC = () => {
         return STUDY_MINUTES * 60;
       }
     });
+  };
+
+  // 공부 종료 및 저장
+  const handleFinishAndSave = async () => {
+    console.log('[타이머] 공부 종료 버튼 클릭');
+    if (!startTime) {
+      Alert.alert('알림', '타이머를 먼저 시작하세요.');
+      console.log('[타이머] startTime 없음');
+      return;
+    }
+    const endTime = new Date();
+    const studyMinutes = isStudy ? Math.round(((endTime.getTime() - startTime.getTime()) / 1000) / 60) : STUDY_MINUTES;
+    const restMinutes = !isStudy ? Math.round(((endTime.getTime() - startTime.getTime()) / 1000) / 60) : BREAK_MINUTES;
+    const mode = `${STUDY_MINUTES}/${BREAK_MINUTES}`;
+    const summary = '';
+    const payload = {
+      studyMinutes,
+      restMinutes,
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+      mode,
+      summary,
+    };
+    console.log('[타이머] 서버로 보낼 데이터:', payload);
+    try {
+      const res = await fetch('http://192.168.0.7:8080/api/timer/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(payload),
+      });
+      console.log('[타이머] fetch 응답 status:', res.status);
+      const data = await res.json();
+      console.log('[타이머] fetch 응답 데이터:', data);
+      if (data.success) {
+        Alert.alert('저장 완료', '공부 기록이 저장되었습니다!');
+        setStartTime(null);
+        setIsRunning(false);
+        setRemaining(isStudy ? STUDY_MINUTES * 60 : BREAK_MINUTES * 60);
+      } else {
+        Alert.alert('저장 실패', data.message || '저장에 실패했습니다.');
+      }
+    } catch (e) {
+      console.log('[타이머] fetch 에러:', e);
+      Alert.alert('오류', '서버와 통신에 실패했습니다.');
+    }
   };
 
   // 시간 포맷
@@ -123,6 +175,9 @@ const TimerScreen: React.FC = () => {
           <Text style={[styles.buttonText, { color: '#6EC1E4' }]}>모드전환</Text>
         </TouchableOpacity>
       </View>
+      <TouchableOpacity style={styles.finishButton} onPress={handleFinishAndSave} activeOpacity={0.85}>
+        <Text style={styles.finishButtonText}>공부 종료</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -229,6 +284,26 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#FF7F7F',
+  },
+  finishButton: {
+    marginTop: 32,
+    backgroundColor: '#7ED957',
+    borderRadius: 24,
+    paddingVertical: 18,
+    paddingHorizontal: 48,
+    alignItems: 'center',
+    alignSelf: 'center',
+    shadowColor: '#7ED957',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  finishButtonText: {
+    color: '#fff',
+    fontSize: 20,
+    fontWeight: 'bold',
+    letterSpacing: 1,
   },
 });
 

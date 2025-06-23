@@ -47,6 +47,7 @@ class ApiClient {
       headers: {
         'Content-Type': 'application/json',
       },
+      withCredentials: true,
     });
     this.memoryStorage = new MemoryStorage();
     this.setupInterceptors();

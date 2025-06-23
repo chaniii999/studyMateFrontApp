@@ -1,9 +1,9 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatisticsStackParamList } from './types';
-
+import StatisticsScreen from '../screens/statistics/StatisticsScreen';
 // 임시 화면 컴포넌트들 (나중에 실제 화면으로 교체)
-const StatisticsOverviewScreen = () => null;
+// const StatisticsOverviewScreen = () => null;
 const DailyStatsScreen = () => null;
 const WeeklyStatsScreen = () => null;
 const MonthlyStatsScreen = () => null;
@@ -36,7 +36,7 @@ const StatisticsNavigator: React.FC = () => {
     >
       <Stack.Screen 
         name="StatisticsOverview" 
-        component={StatisticsOverviewScreen}
+        component={StatisticsScreen}
         options={{
           title: '통계',
         }}
