@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, Alert } from 'react-native';
 import { theme } from '../../theme';
+import apiClient from '../../services/apiClient';
 
 const STUDY_MINUTES = 25;
 const BREAK_MINUTES = 5;
@@ -96,27 +97,18 @@ const TimerScreen: React.FC = () => {
     };
     console.log('[타이머] 서버로 보낼 데이터:', payload);
     try {
-      const res = await fetch('http://192.168.0.7:8080/api/timer/save', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(payload),
-      });
-      console.log('[타이머] fetch 응답 status:', res.status);
-      const data = await res.json();
-      console.log('[타이머] fetch 응답 데이터:', data);
-      if (data.success) {
+      const response = await apiClient.post('/timer/save', payload);
+      console.log('[타이머] apiClient 응답:', response);
+      if (response.success) {
         Alert.alert('저장 완료', '공부 기록이 저장되었습니다!');
         setStartTime(null);
         setIsRunning(false);
         setRemaining(isStudy ? STUDY_MINUTES * 60 : BREAK_MINUTES * 60);
       } else {
-        Alert.alert('저장 실패', data.message || '저장에 실패했습니다.');
+        Alert.alert('저장 실패', response.message || '저장에 실패했습니다.');
       }
     } catch (e) {
-      console.log('[타이머] fetch 에러:', e);
+      console.log('[타이머] apiClient 에러:', e);
       Alert.alert('오류', '서버와 통신에 실패했습니다.');
     }
   };

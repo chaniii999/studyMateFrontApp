@@ -1,4 +1,5 @@
 import config from '../../figma-config.json';
+import axios from 'axios';
 
 interface FigmaNode {
   id: string;
@@ -65,18 +66,18 @@ class FigmaAPI {
       throw new Error('Figma API 키가 설정되지 않았습니다.');
     }
 
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+    const response = await axios.get(`${this.baseUrl}${endpoint}`, {
       headers: {
         'X-Figma-Token': this.apiKey,
         'Content-Type': 'application/json',
       },
     });
 
-    if (!response.ok) {
+    if (response.status !== 200) {
       throw new Error(`Figma API 요청 실패: ${response.status} ${response.statusText}`);
     }
 
-    return response.json();
+    return response.data;
   }
 
   /**

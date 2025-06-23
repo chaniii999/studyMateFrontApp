@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-nativ
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Card from '../../components/common/Card';
 import { theme } from '../../theme';
+import apiClient from '../../services/apiClient';
 
 interface TimerRecord {
   id: number;
@@ -19,13 +20,13 @@ const StatisticsScreen: React.FC = () => {
   const [records, setRecords] = useState<TimerRecord[]>([]);
 
   useEffect(() => {
-    // 실제로는 인증 토큰 필요, 예시용 fetch
-    fetch('http://localhost:8080/api/timer/history', {
-      credentials: 'include',
-    })
-      .then(res => res.json())
+    // apiClient를 통한 인증 요청
+    apiClient.get('/timer/history')
       .then(data => {
         if (data.success) setRecords(data.data);
+      })
+      .catch((err) => {
+        console.error('기록 조회 에러:', err);
       })
       .finally(() => setLoading(false));
   }, []);
