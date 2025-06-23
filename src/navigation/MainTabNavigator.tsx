@@ -8,7 +8,7 @@ import { theme } from '../theme';
 // 네비게이터들 import
 import HomeNavigator from './HomeNavigator';
 import TimerNavigator from './TimerNavigator';
-import TopicsNavigator from './TopicsNavigator';
+import ScheduleNavigator from './ScheduleNavigator';
 import StatisticsNavigator from './StatisticsNavigator';
 import ProfileNavigator from './ProfileNavigator';
 
@@ -29,8 +29,8 @@ const MainTabNavigator: React.FC = () => {
             case 'Timer':
               iconName = focused ? 'timer' : 'timer-outline';
               break;
-            case 'Topics':
-              iconName = focused ? 'library' : 'library-outline';
+            case 'Schedule':
+              iconName = focused ? 'calendar' : 'calendar-outline';
               break;
             case 'Statistics':
               iconName = focused ? 'analytics' : 'analytics-outline';
@@ -93,11 +93,11 @@ const MainTabNavigator: React.FC = () => {
         }}
       />
       <Tab.Screen
-        name="Topics"
-        component={TopicsNavigator}
+        name="Schedule"
+        component={ScheduleNavigator}
         options={{
-          title: '주제',
-          tabBarLabel: '주제',
+          title: '스케쥴',
+          tabBarLabel: '스케쥴',
         }}
       />
       <Tab.Screen

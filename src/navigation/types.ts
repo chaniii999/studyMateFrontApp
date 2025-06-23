@@ -4,7 +4,7 @@ import { NavigatorScreenParams } from '@react-navigation/native';
 export type MainTabParamList = {
   Home: undefined;
   Timer: undefined;
-  Topics: undefined;
+  Schedule: undefined;
   Statistics: undefined;
   Profile: undefined;
 };
@@ -26,14 +26,10 @@ export type TimerStackParamList = {
   SessionComplete: { timerId: number; studyTime: number };
 };
 
-// 주제 스택 네비게이션 파라미터
-export type TopicsStackParamList = {
-  TopicsList: undefined;
-  TopicDetail: { topicId: string };
-  CreateTopic: undefined;
-  EditTopic: { topicId: string };
-  TopicStatistics: { topicId: string };
-  TopicFeedback: { topicId: string; period: 'daily' | 'weekly' | 'monthly' };
+// 스케쥴 스택 네비게이션 파라미터 (새로 추가)
+export type ScheduleStackParamList = {
+  ScheduleScreen: undefined;
+  // 추후 스케쥴 관련 다른 화면 추가 가능
 };
 
 // 통계 스택 네비게이션 파라미터
