@@ -1,9 +1,9 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { TimerStackParamList } from './types';
-
+import TimerScreen from '../screens/timer/TimerScreen';
 // 임시 화면 컴포넌트들 (나중에 실제 화면으로 교체)
-const TimerScreen = () => null;
+// const TimerScreen = () => null;
 const TimerSettingsScreen = () => null;
 const TimerHistoryScreen = () => null;
 const FocusLevelScreen = () => null;
