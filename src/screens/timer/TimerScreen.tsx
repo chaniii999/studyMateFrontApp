@@ -84,6 +84,7 @@ const TimerScreen: React.FC = () => {
         return STUDY_MINUTES * 60;
       }
     });
+    setTimeout(() => setIsRunning(true), 0);
   };
 
   // 공부 종료 및 저장
