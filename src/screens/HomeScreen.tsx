@@ -4,6 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import { theme } from '../theme';
+import { useNavigation } from '@react-navigation/native';
+import { MainTabParamList } from '../navigation/types';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -13,6 +16,8 @@ const SIDE_PADDING = theme.spacing[4];
 // SafeAreaView가 상단 패딩을 처리하므로 TOP_PADDING 제거
 
 const HomeScreen: React.FC = () => {
+  const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <ScrollView
@@ -33,7 +38,12 @@ const HomeScreen: React.FC = () => {
         <Card style={styles.card} elevation="md" borderRadius="md">
           <Text style={styles.cardTitle}>빠른 시작</Text>
           <Text style={styles.cardContent}>지금 바로 타이머를 시작해 집중 학습을 시작하세요.</Text>
-          <Button title="타이머 시작" onPress={() => {}} size="sm" style={styles.button} variant="primary" />
+          <Button title="타이머 시작" onPress={() => {
+            navigation.navigate('Timer', {
+              screen: 'TimerScreen',
+              params: { autoStart: true },
+            });
+          }} size="sm" style={styles.button} variant="primary" />
         </Card>
         <Card style={styles.card} elevation="md" borderRadius="md">
           <Text style={styles.cardTitle}>알림</Text>

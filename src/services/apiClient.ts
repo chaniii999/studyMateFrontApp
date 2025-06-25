@@ -3,7 +3,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ApiError, ApiResponse } from '../types';
 
 // API 기본 설정
-const API_BASE_URL = 'http://192.168.0.7:8080/api'; // 개발 환경
+const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE_URL ||
+  'http://192.168.0.3:8080/api'; // 실제 IP
+// const API_BASE_URL = 'http://localhost:8080/api'; // 로컬 개발용(PC에서만)
 // const API_BASE_URL = 'https://your-production-api.com/api'; // 프로덕션 환경
 
 // 토큰 저장 키

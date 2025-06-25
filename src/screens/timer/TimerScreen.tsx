@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, Alert } from 'react-native';
 import { theme } from '../../theme';
 import apiClient from '../../services/apiClient';
+import { useRoute } from '@react-navigation/native';
 
 const STUDY_MINUTES = 25;
 const BREAK_MINUTES = 5;
@@ -14,6 +15,7 @@ const pastelColors = {
 };
 
 const TimerScreen: React.FC = () => {
+  const route = useRoute();
   const [isRunning, setIsRunning] = useState(false);
   const [isStudy, setIsStudy] = useState(true);
   const [remaining, setRemaining] = useState(STUDY_MINUTES * 60);
@@ -48,6 +50,16 @@ const TimerScreen: React.FC = () => {
       easing: Easing.out(Easing.quad),
     }).start();
   }, [remaining, isStudy]);
+
+  useEffect(() => {
+    if (route.params && (route.params as any).autoStart) {
+      if (!isRunning) {
+        setStartTime(new Date());
+        setIsRunning(true);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route.params]);
 
   const handleStartPause = () => {
     if (!isRunning && !startTime) {

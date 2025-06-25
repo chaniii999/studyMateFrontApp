@@ -3,7 +3,7 @@ import { NavigatorScreenParams } from '@react-navigation/native';
 // 메인 탭 네비게이션 파라미터
 export type MainTabParamList = {
   Home: undefined;
-  Timer: undefined;
+  Timer: NavigatorScreenParams<TimerStackParamList>;
   Schedule: undefined;
   Statistics: undefined;
   Profile: undefined;
@@ -19,7 +19,7 @@ export type HomeStackParamList = {
 
 // 타이머 스택 네비게이션 파라미터
 export type TimerStackParamList = {
-  TimerScreen: undefined;
+  TimerScreen: { autoStart?: boolean } | undefined;
   TimerSettings: undefined;
   TimerHistory: undefined;
   FocusLevel: { timerId: number };
