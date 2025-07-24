@@ -1,4 +1,62 @@
 // AI 피드백 관련 타입 정의
+
+// 세션 요약 정보
+export interface StudySessionSummary {
+  sessionInfo: {
+    studyTime: string; // "2분 30초"
+    restTime: string;  // "5분"
+    totalTime: string; // "7분 30초"
+    studyTimeSeconds: number; // 150
+    restTimeSeconds: number;  // 300
+    totalTimeSeconds: number; // 450
+    mode: string;      // "study" 또는 "rest"
+    startTime: string; // "2024-01-15 14:30:00"
+    endTime: string;   // "2024-01-15 14:37:30"
+  };
+  studyDetails: {
+    topic: string;     // "수학 - 미적분학"
+    goal: string;      // "미적분학 기초 개념 이해"
+    difficulty: string; // "보통"
+    concentration: string; // "높음"
+    mood: string;      // "좋음"
+    interruptions: string; // "없음"
+    studyMethod: string;   // "문제 풀이"
+    environment: string;   // "도서관"
+    energyLevel: string;   // "높음"
+    stressLevel: string;   // "낮음"
+  };
+  summary: string;     // "미적분학 기초 개념을 2분 30초 동안 집중적으로 학습했습니다."
+}
+
+// AI 피드백 응답 (개선된 버전)
+export interface AiFeedbackResponse {
+  sessionSummary: StudySessionSummary;
+  feedback: string;
+  suggestions: string;
+  motivation: string;
+}
+
+// 기존 AI 피드백 요청 (호환성 유지)
+export interface AiFeedbackRequest {
+  timerId: number;
+  studySummary: string;
+  studyTime: number;
+  restTime: number;
+  mode: string;
+  // 추가 설문조사 데이터
+  studyTopic?: string;
+  studyGoal?: string;
+  difficulty?: string;
+  concentration?: string;
+  mood?: string;
+  interruptions?: string;
+  studyMethod?: string;
+  environment?: string;
+  energyLevel?: string;
+  stressLevel?: string;
+}
+
+// 기본 AI 피드백 타입
 export interface AIFeedback {
   id: string;
   period: 'daily' | 'weekly' | 'monthly';

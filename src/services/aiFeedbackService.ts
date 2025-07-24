@@ -1,29 +1,5 @@
 import apiClient from './apiClient';
-
-export interface AiFeedbackRequest {
-  timerId: number;
-  studySummary: string;
-  studyTime: number;
-  restTime: number;
-  mode: string;
-  // 추가 설문조사 데이터
-  studyTopic?: string;
-  studyGoal?: string;
-  difficulty?: string;
-  concentration?: string;
-  mood?: string;
-  interruptions?: string;
-  studyMethod?: string;
-  environment?: string;
-  energyLevel?: string;
-  stressLevel?: string;
-}
-
-export interface AiFeedbackResponse {
-  feedback: string;
-  suggestions: string;
-  motivation: string;
-}
+import { AiFeedbackRequest, AiFeedbackResponse } from '../types/aiFeedback';
 
 export const aiFeedbackService = {
   // 새로운 AI 피드백 생성

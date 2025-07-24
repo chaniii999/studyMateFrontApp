@@ -5,9 +5,11 @@ import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import { theme } from '../../theme';
 import apiClient from '../../services/apiClient';
-import { aiFeedbackService, AiFeedbackRequest } from '../../services/aiFeedbackService';
+import { aiFeedbackService } from '../../services/aiFeedbackService';
+import { StudySessionSummary, AiFeedbackRequest } from '../../types/aiFeedback';
 import AiFeedbackSurvey, { AiFeedbackSurveyData } from '../../components/AiFeedbackSurvey';
 import { useFocusEffect } from '@react-navigation/native';
+
 interface TimerRecord {
   id: number;
   startTime: string;
@@ -19,6 +21,7 @@ interface TimerRecord {
   aiFeedback?: string;
   aiSuggestions?: string;
   aiMotivation?: string;
+  sessionSummary?: StudySessionSummary; // 새로운 세션 요약 정보
 }
 
 const StatisticsScreen: React.FC = () => {
@@ -27,6 +30,7 @@ const StatisticsScreen: React.FC = () => {
   const [aiLoading, setAiLoading] = useState<number | null>(null);
   const [surveyVisible, setSurveyVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<TimerRecord | null>(null);
+  const [expandedFeedback, setExpandedFeedback] = useState<Set<number>>(new Set());
 
   useFocusEffect(
     React.useCallback(() => {
@@ -36,6 +40,21 @@ const StatisticsScreen: React.FC = () => {
           if (data.success) {
             console.log('[통계] 받은 데이터:', JSON.stringify(data.data, null, 2));
             setRecords(data.data);
+            
+            // 기존 AI 피드백이 있는 기록들의 세션 요약 정보 로드
+            const recordsWithAiFeedback = data.data.filter((record: TimerRecord) => record.aiFeedback);
+            recordsWithAiFeedback.forEach(async (record: TimerRecord) => {
+              try {
+                const existingFeedback = await aiFeedbackService.getExistingFeedback(record.id);
+                setRecords(prev => prev.map(item => 
+                  item.id === record.id 
+                    ? { ...item, sessionSummary: existingFeedback.sessionSummary }
+                    : item
+                ));
+              } catch (error) {
+                console.log(`[통계] 기록 ${record.id}의 세션 요약 로드 실패:`, error);
+              }
+            });
           }
         })
         .catch((err) => {
@@ -71,6 +90,12 @@ const StatisticsScreen: React.FC = () => {
   };
 
   const renderItem = ({ item }: { item: TimerRecord }) => {
+    // item이 undefined인 경우 처리
+    if (!item) {
+      console.warn('[통계] renderItem: item이 undefined입니다.');
+      return null;
+    }
+    
     // 백엔드에서 받은 studyTime, restTime은 이제 초 단위로 저장됨
     const studySeconds = item.studyTime ?? 0;
     const restSeconds = item.restTime ?? 0;
@@ -111,9 +136,70 @@ const StatisticsScreen: React.FC = () => {
         </Text>
         <Text style={styles.summaryText}>{item.summary || '요약 없음'}</Text>
         
-        {/* AI 피드백 섹션 */}
+        {/* AI 피드백 토글 버튼 */}
         {item.aiFeedback && (
+          <TouchableOpacity
+            style={styles.feedbackToggleButton}
+            onPress={() => toggleFeedback(item.id)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.feedbackToggleText}>
+              {expandedFeedback.has(item.id) ? '📖 AI 피드백 접기' : '🤖 AI 피드백 보기'}
+            </Text>
+          </TouchableOpacity>
+        )}
+        
+        {/* AI 피드백 섹션 (접었다 펼 수 있음) */}
+        {item.aiFeedback && expandedFeedback.has(item.id) && (
           <View style={styles.aiSection}>
+            {/* 세션 요약 정보 표시 */}
+            {item.sessionSummary && item.sessionSummary.sessionInfo && (
+              <View style={styles.sessionSummarySection}>
+                <Text style={styles.aiTitle}>📊 세션 요약</Text>
+                <View style={styles.summaryGrid}>
+                  <View style={styles.summaryItem}>
+                    <Text style={styles.summaryLabel}>공부 시간</Text>
+                    <Text style={styles.summaryValue}>{item.sessionSummary.sessionInfo.studyTime || '정보 없음'}</Text>
+                  </View>
+                  <View style={styles.summaryItem}>
+                    <Text style={styles.summaryLabel}>휴식 시간</Text>
+                    <Text style={styles.summaryValue}>{item.sessionSummary.sessionInfo.restTime || '정보 없음'}</Text>
+                  </View>
+                  <View style={styles.summaryItem}>
+                    <Text style={styles.summaryLabel}>총 시간</Text>
+                    <Text style={styles.summaryValue}>{item.sessionSummary.sessionInfo.totalTime || '정보 없음'}</Text>
+                  </View>
+                </View>
+                
+                {/* 학습 세부 정보 */}
+                {item.sessionSummary.studyDetails && (
+                  <View style={styles.detailsSection}>
+                    <Text style={styles.detailsTitle}>📚 학습 세부사항</Text>
+                    <View style={styles.detailsGrid}>
+                      <View style={styles.detailItem}>
+                        <Text style={styles.detailLabel}>주제</Text>
+                        <Text style={styles.detailValue}>{item.sessionSummary.studyDetails.topic || '정보 없음'}</Text>
+                      </View>
+                      <View style={styles.detailItem}>
+                        <Text style={styles.detailLabel}>목표</Text>
+                        <Text style={styles.detailValue}>{item.sessionSummary.studyDetails.goal || '정보 없음'}</Text>
+                      </View>
+                      <View style={styles.detailItem}>
+                        <Text style={styles.detailLabel}>난이도</Text>
+                        <Text style={styles.detailValue}>{item.sessionSummary.studyDetails.difficulty || '정보 없음'}</Text>
+                      </View>
+                      <View style={styles.detailItem}>
+                        <Text style={styles.detailLabel}>집중도</Text>
+                        <Text style={styles.detailValue}>{item.sessionSummary.studyDetails.concentration || '정보 없음'}</Text>
+                      </View>
+                    </View>
+                  </View>
+                )}
+                
+                <Text style={styles.summaryText}>{item.sessionSummary.summary || '요약 정보가 없습니다.'}</Text>
+              </View>
+            )}
+            
             <Text style={styles.aiTitle}>🤖 AI 피드백</Text>
             <Text style={styles.aiText}>{item.aiFeedback}</Text>
             <Text style={styles.aiTitle}>💡 개선 제안</Text>
@@ -123,14 +209,14 @@ const StatisticsScreen: React.FC = () => {
           </View>
         )}
         
-        {/* AI 피드백 버튼 */}
+        {/* AI 피드백 생성 버튼 */}
         <Button
-          title={aiLoading === item.id ? "AI 분석 중..." : "AI 피드백 받기"}
+          title={aiLoading === item.id ? "AI 분석 중..." : (item.aiFeedback ? "AI 피드백 다시 받기" : "AI 피드백 받기")}
           onPress={() => handleAiFeedback(item)}
           disabled={aiLoading === item.id}
           size="sm"
-          variant="secondary"
-          style={styles.aiButton}
+          variant={item.aiFeedback ? "primary" : "secondary"}
+          style={item.aiFeedback ? styles.aiButtonRetry : styles.aiButton}
         />
       </Card>
     );
@@ -146,6 +232,18 @@ const StatisticsScreen: React.FC = () => {
     setSurveyVisible(true);
   };
 
+  const toggleFeedback = (recordId: number) => {
+    setExpandedFeedback(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(recordId)) {
+        newSet.delete(recordId);
+      } else {
+        newSet.add(recordId);
+      }
+      return newSet;
+    });
+  };
+
   const handleSurveySubmit = async (surveyData: AiFeedbackSurveyData) => {
     if (!selectedRecord) return;
 
@@ -156,8 +254,8 @@ const StatisticsScreen: React.FC = () => {
       const request: AiFeedbackRequest = {
         timerId: selectedRecord.id,
         studySummary: selectedRecord.summary || '학습 기록',
-        studyTime: Math.round((selectedRecord.studyTime || 0) / 60), // 초를 분으로 변환
-        restTime: Math.round((selectedRecord.restTime || 0) / 60),   // 초를 분으로 변환
+        studyTime: selectedRecord.studyTime || 0, // 초 단위로 직접 전송
+        restTime: selectedRecord.restTime || 0,   // 초 단위로 직접 전송
         mode: selectedRecord.mode || '25/5',
         // 설문조사 데이터 추가
         ...surveyData
@@ -165,10 +263,16 @@ const StatisticsScreen: React.FC = () => {
 
       const feedback = await aiFeedbackService.createFeedback(request);
       
-      // 기록 목록 업데이트
+      // 기록 목록 업데이트 (새로운 응답 구조 반영)
       setRecords(prev => prev.map(item => 
         item.id === selectedRecord.id 
-          ? { ...item, aiFeedback: feedback.feedback, aiSuggestions: feedback.suggestions, aiMotivation: feedback.motivation }
+          ? { 
+              ...item, 
+              aiFeedback: feedback.feedback, 
+              aiSuggestions: feedback.suggestions, 
+              aiMotivation: feedback.motivation,
+              sessionSummary: feedback.sessionSummary // 새로운 세션 요약 정보 추가
+            }
           : item
       ));
 
@@ -299,6 +403,80 @@ const styles = StyleSheet.create({
   },
   aiButton: {
     marginTop: 16,
+  },
+  aiButtonRetry: {
+    marginTop: 16,
+    backgroundColor: '#FF6B6B',
+    borderColor: '#FF6B6B',
+  },
+  feedbackToggleButton: {
+    backgroundColor: '#E0F7FA',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#6EC1E4',
+  },
+  feedbackToggleText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#6EC1E4',
+    textAlign: 'center',
+  },
+  sessionSummarySection: {
+    marginBottom: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  summaryGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  summaryItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  summaryLabel: {
+    fontSize: 12,
+    color: theme.colors.text.secondary,
+    marginBottom: 4,
+  },
+  summaryValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.primary[500],
+  },
+  detailsSection: {
+    marginBottom: 16,
+  },
+  detailsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.primary[500],
+    marginBottom: 12,
+  },
+  detailsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  detailItem: {
+    flex: 1,
+    minWidth: '45%',
+  },
+  detailLabel: {
+    fontSize: 12,
+    color: theme.colors.text.secondary,
+    marginBottom: 4,
+  },
+  detailValue: {
+    fontSize: 14,
+    color: theme.colors.text.primary,
+    fontWeight: '500',
   },
 });
 
