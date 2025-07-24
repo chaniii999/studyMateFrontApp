@@ -1,0 +1,143 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# studymate-rule
+
+## 1. 언어 및 프레임워크
+- 주요 언어: TypeScript (React Native), Java (Spring Boot)
+- 프론트엔드: React Native
+- 백엔드: Spring Boot
+
+## 2. 코드 스타일 (프론트엔드)
+- 들여쓰기: 2 spaces
+- 세미콜론: 항상 사용
+- 따옴표: '싱글 쿼트' 사용
+- 변수/함수/파일명: camelCase
+- 컴포넌트명: PascalCase
+- 파일명: 컴포넌트는 PascalCase, 유틸/훅/타입 등은 camelCase
+- 주석: 한글/영어 모두 허용, 의미 있게 작성
+- 타입스크립트 타입/인터페이스: PascalCase
+
+## 3. 코드 스타일 (백엔드)
+- 언어: Java
+- 클래스명: PascalCase
+- 변수/메서드명: camelCase
+- 상수: 대문자 SNAKE_CASE
+- 들여쓰기: 4 spaces
+- 주석: 한글/영어 모두 허용, 의미 있게 작성
+
+## 4. 폴더/파일 구조 (프론트엔드)
+- src/components: 공통/화면별 컴포넌트
+- src/screens: 주요 화면
+- src/services: API/비즈니스 로직
+- src/store: 상태관리
+- src/types: 타입 정의
+- src/utils: 유틸 함수
+- src/theme: 테마/스타일
+
+## 5. 커밋 메시지 규칙
+- [타입] 메시지 (예: [feat] 로그인 기능 추가)
+- 타입 예시: feat, fix, docs, style, refactor, test, chore
+
+## 6. 환경설정 및 보안
+- 환경 변수는 .env 파일에 저장, Git에 커밋 금지
+- figma-config.json, .env 등 민감 파일은 .gitignore에 반드시 포함
+
+## 7. 기타 규칙
+- 불필요한 코드/주석 금지
+- 함수는 최대 30줄 이하, 하나의 역할만 수행
+- PR 시 코드리뷰 필수
+
+## 8. 예시 코드
+
+```typescript
+// src/components/common/Button.tsx
+import React from 'react';
+
+interface ButtonProps {
+  label: string;
+  onClick: () => void;
+}
+
+const Button: React.FC<ButtonProps> = ({ label, onClick }) => (
+  <button onClick={onClick}>{label}</button>
+);
+
+export default Button;
+```
+
+---
+
+이 규칙을 모든 개발 및 AI 코드 생성 시 반드시 준수해 주세요.
+
+## 9. UI 컴포넌트 규칙
+- 모든 UI 컴포넌트는 src/components/common 또는 src/components/하위 폴더에 작성
+- 컴포넌트명은 PascalCase, 파일명도 PascalCase로 작성
+- props는 명확하게 타입 지정 (TypeScript interface 사용)
+- 스타일은 StyleSheet.create로 분리, theme(색상, spacing, borderRadius 등) 적극 활용
+- variant, size, disabled, loading 등 확장성 있는 props 설계 권장
+- 텍스트/색상/간격 등은 theme에서 가져와 일관성 유지
+- 버튼 등 인터랙션 컴포넌트는 TouchableOpacity 등 접근성 고려
+- 불필요한 props, 스타일 중복 금지
+- ActivityIndicator 등 로딩 UI는 일관된 스타일 적용
+- 커스텀 스타일(style, textStyle 등) props 허용
+- 예시:
+```typescript
+<Button title="확인" onPress={handlePress} variant="primary" size="md" />
+```
+
+## 10. 스크린(화면) 컴포넌트 규칙
+- 모든 화면은 src/screens/에 작성, 파일명은 PascalCase
+- 화면 컴포넌트는 React.FC로 작성, export default 사용
+- SafeAreaView, ScrollView 등 레이아웃 컴포넌트 적극 활용
+- 화면 내 Card, Button 등 공통 컴포넌트 재사용
+- 스타일은 StyleSheet.create로 분리, theme 적극 활용
+- 화면 스타일은 container, contentContainer, card 등 역할별로 명확히 분리
+- 네비게이션은 useNavigation 등 hook 사용, 타입 명확히 지정
+- 텍스트/색상/간격 등은 theme에서 가져와 일관성 유지
+- 화면 내 하드코딩된 값 대신 theme.spacing, theme.typography 등 사용
+- 예시:
+```typescript
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background.primary,
+  },
+  card: {
+    marginBottom: theme.spacing[3],
+    minHeight: 120,
+    width: '100%',
+    justifyContent: 'center',
+    paddingVertical: theme.spacing[4],
+    paddingHorizontal: theme.spacing[4],
+  },
+  cardTitle: {
+    fontSize: theme.typography.fontSize.lg,
+    fontWeight: '600',
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing[1],
+  },
+});
+```
+
+## 11. 테마/디자인 시스템 규칙
+- 색상, 타이포그래피, 간격, 그림자, borderRadius 등은 src/theme/index.ts의 theme 객체에서만 관리
+- theme.colors, theme.typography, theme.spacing 등 직접 import해서 사용
+- 새로운 색상/스타일 추가 시 theme에 먼저 정의 후 사용
+- 8px spacing 시스템(0, 4, 8, 12, 16, ...)을 기본으로 사용
+- 그림자, borderRadius 등도 theme 값만 사용
+- 예시:
+```typescript
+backgroundColor: theme.colors.primary[500]
+paddingHorizontal: theme.spacing[4]
+fontSize: theme.typography.fontSize.base
+borderRadius: theme.borderRadius.base
+```
+
+## 12. 접근성/일관성
+- 텍스트 대비, 버튼 크기 등 접근성 고려
+- 모든 텍스트는 theme.typography, 색상은 theme.colors 사용
+- 동일한 UI/화면 구조는 반드시 공통 컴포넌트로 분리해 재사용
+- 스타일/레이아웃/네이밍 일관성 유지
