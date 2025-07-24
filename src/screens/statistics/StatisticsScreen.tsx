@@ -38,7 +38,6 @@ const StatisticsScreen: React.FC = () => {
       apiClient.get('/timer/history')
         .then(data => {
           if (data.success) {
-            console.log('[통계] 받은 데이터:', JSON.stringify(data.data, null, 2));
             setRecords(data.data);
             
             // 기존 AI 피드백이 있는 기록들의 세션 요약 정보 로드
@@ -52,7 +51,7 @@ const StatisticsScreen: React.FC = () => {
                     : item
                 ));
               } catch (error) {
-                console.log(`[통계] 기록 ${record.id}의 세션 요약 로드 실패:`, error);
+                // 세션 요약 로드 실패 시 조용히 처리
               }
             });
           }
@@ -68,11 +67,9 @@ const StatisticsScreen: React.FC = () => {
     // 비정상적으로 큰 값 처리 (예: 9000초 = 2.5시간이면 150초 = 2.5분으로 변환)
     let adjustedSec = sec;
     if (sec > 3600) { // 1시간 이상이면 의심스러운 값
-      console.warn(`[통계] 비정상적으로 큰 시간값 감지: ${sec}초, 원래값: ${sec}초`);
       // 만약 실제로는 분 단위였다면 60으로 나누어 변환
       if (sec % 60 === 0) {
         adjustedSec = Math.floor(sec / 60);
-        console.log(`[통계] 분 단위로 변환: ${sec}초 → ${adjustedSec}초`);
       }
     }
     
@@ -101,24 +98,7 @@ const StatisticsScreen: React.FC = () => {
     const restSeconds = item.restTime ?? 0;
     const totalSeconds = studySeconds + restSeconds;
     
-    // 디버그: 실제 받은 값 확인
-    console.log(`[통계] 기록 ID ${item.id}:`, {
-      원본studyTime: item.studyTime,
-      원본restTime: item.restTime,
-      계산된studySeconds: studySeconds,
-      계산된restSeconds: restSeconds,
-      의심스러운값: {
-        studyTime큰값: studySeconds > 3600 ? 'YES' : 'NO',
-        restTime큰값: restSeconds > 3600 ? 'YES' : 'NO',
-        studyTime60배수: studySeconds % 60 === 0 ? 'YES' : 'NO',
-        restTime60배수: restSeconds % 60 === 0 ? 'YES' : 'NO'
-      },
-      formatTime결과: {
-        공부: formatTime(studySeconds),
-        휴식: formatTime(restSeconds),
-        총합: formatTime(totalSeconds)
-      }
-    });
+
     return (
       <Card style={styles.card} elevation="md" borderRadius="md">
         <Text style={styles.dateText}>{formatDate(item.startTime)}</Text>
