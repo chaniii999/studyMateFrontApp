@@ -69,6 +69,46 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ navigation }) => {
     setRefreshing(false);
   };
 
+  // 상태별 색상
+  const getStatusColor = (status?: ScheduleStatus) => {
+    if (!status) return theme.colors.primary[500];
+    
+    switch (status) {
+      case ScheduleStatus.COMPLETED:
+        return '#4CAF50';
+      case ScheduleStatus.IN_PROGRESS:
+        return '#2196F3';
+      case ScheduleStatus.CANCELLED:
+        return '#9E9E9E';
+      case ScheduleStatus.POSTPONED:
+        return '#FF9800';
+      case ScheduleStatus.PLANNED:
+        return theme.colors.primary[500];
+      default:
+        return theme.colors.primary[500];
+    }
+  };
+
+  // 상태별 텍스트
+  const getStatusText = (status?: ScheduleStatus) => {
+    if (!status) return '계획됨';
+    
+    switch (status) {
+      case ScheduleStatus.COMPLETED:
+        return '완료';
+      case ScheduleStatus.IN_PROGRESS:
+        return '진행중';
+      case ScheduleStatus.CANCELLED:
+        return '취소';
+      case ScheduleStatus.POSTPONED:
+        return '연기';
+      case ScheduleStatus.PLANNED:
+        return '계획됨';
+      default:
+        return '계획됨';
+    }
+  };
+
   // 날짜별 스케줄 필터링
   const filteredSchedules = useMemo(() => {
     const date = new Date(selectedDate);
@@ -116,38 +156,6 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ navigation }) => {
 
     return dots;
   }, [schedules, selectedDate]);
-
-  // 상태별 색상
-  const getStatusColor = (status: ScheduleStatus) => {
-    switch (status) {
-      case ScheduleStatus.COMPLETED:
-        return '#4CAF50';
-      case ScheduleStatus.IN_PROGRESS:
-        return '#2196F3';
-      case ScheduleStatus.CANCELLED:
-        return '#9E9E9E';
-      case ScheduleStatus.POSTPONED:
-        return '#FF9800';
-      default:
-        return theme.colors.primary[500];
-    }
-  };
-
-  // 상태별 텍스트
-  const getStatusText = (status: ScheduleStatus) => {
-    switch (status) {
-      case ScheduleStatus.COMPLETED:
-        return '완료';
-      case ScheduleStatus.IN_PROGRESS:
-        return '진행중';
-      case ScheduleStatus.CANCELLED:
-        return '취소';
-      case ScheduleStatus.POSTPONED:
-        return '연기';
-      default:
-        return '계획됨';
-    }
-  };
 
   // 시간 포맷팅
   const formatTime = (time?: string) => {
@@ -221,50 +229,54 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ navigation }) => {
   };
 
   // 스케줄 아이템 렌더러
-  const renderScheduleItem = ({ item }: { item: ScheduleResponse }) => (
-    <Swipeable
-      renderRightActions={() => renderSwipeActions(item)}
-      rightThreshold={40}
-    >
-      <TouchableOpacity
-        style={styles.scheduleItem}
-        onPress={() => handleSchedulePress(item)}
-        activeOpacity={0.7}
+  const renderScheduleItem = ({ item }: { item: ScheduleResponse }) => {
+    if (!item) return null;
+    
+    return (
+      <Swipeable
+        renderRightActions={() => renderSwipeActions(item)}
+        rightThreshold={40}
       >
-        <View style={styles.scheduleHeader}>
-          <Text style={styles.scheduleTitle}>{item.title}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-            <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
-          </View>
-        </View>
-        
-        <View style={styles.scheduleInfo}>
-          <Text style={styles.scheduleTime}>
-            {formatTime(item.startTime)} - {formatTime(item.endTime)}
-          </Text>
-          {item.studyGoal && (
-            <Text style={styles.scheduleGoal} numberOfLines={1}>
-              목표: {item.studyGoal}
-            </Text>
-          )}
-        </View>
-
-        {item.completionRate > 0 && (
-          <View style={styles.progressContainer}>
-            <View style={styles.progressBar}>
-              <View 
-                style={[
-                  styles.progressFill, 
-                  { width: `${item.completionRate}%` }
-                ]} 
-              />
+        <TouchableOpacity
+          style={styles.scheduleItem}
+          onPress={() => handleSchedulePress(item)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.scheduleHeader}>
+            <Text style={styles.scheduleTitle}>{item.title}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+              <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
             </View>
-            <Text style={styles.progressText}>{item.completionRate}%</Text>
           </View>
-        )}
-      </TouchableOpacity>
-    </Swipeable>
-  );
+          
+          <View style={styles.scheduleInfo}>
+            <Text style={styles.scheduleTime}>
+              {formatTime(item.startTime)} - {formatTime(item.endTime)}
+            </Text>
+            {item.studyGoal && (
+              <Text style={styles.scheduleGoal} numberOfLines={1}>
+                목표: {item.studyGoal}
+              </Text>
+            )}
+          </View>
+
+          {item.completionRate > 0 && (
+            <View style={styles.progressContainer}>
+              <View style={styles.progressBar}>
+                <View 
+                  style={[
+                    styles.progressFill, 
+                    { width: `${item.completionRate}%` }
+                  ]} 
+                />
+              </View>
+              <Text style={styles.progressText}>{item.completionRate}%</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </Swipeable>
+    );
+  };
 
   // 뷰 모드 변경
   const handleViewModeChange = () => {
@@ -346,8 +358,6 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ navigation }) => {
               <Button
                 title="새 스케줄 만들기"
                 onPress={() => navigation.navigate('ScheduleCreate', { selectedDate })}
-                size="sm"
-                variant="secondary"
                 style={styles.emptyButton}
               />
             </View>
@@ -383,7 +393,7 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.border.light,
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: theme.colors.text.primary,
   },
@@ -406,14 +416,14 @@ const styles = StyleSheet.create({
   },
   listTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: theme.colors.text.primary,
     marginBottom: theme.spacing[3],
   },
   scheduleItem: {
     backgroundColor: theme.colors.background.secondary,
+    borderRadius: theme.borderRadius.lg,
     padding: theme.spacing[4],
-    borderRadius: 12,
     marginBottom: theme.spacing[3],
     borderLeftWidth: 4,
     borderLeftColor: theme.colors.primary[500],
@@ -431,10 +441,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginLeft: theme.spacing[2],
+    paddingHorizontal: theme.spacing[3],
+    paddingVertical: theme.spacing[1],
+    borderRadius: theme.borderRadius.full,
   },
   statusText: {
     fontSize: 12,
@@ -447,7 +456,7 @@ const styles = StyleSheet.create({
   scheduleTime: {
     fontSize: 14,
     color: theme.colors.text.secondary,
-    marginBottom: 4,
+    marginBottom: theme.spacing[1],
   },
   scheduleGoal: {
     fontSize: 14,
@@ -456,18 +465,19 @@ const styles = StyleSheet.create({
   progressContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: theme.spacing[2],
   },
   progressBar: {
     flex: 1,
-    height: 6,
+    height: 8,
     backgroundColor: theme.colors.border.light,
-    borderRadius: 3,
+    borderRadius: 4,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
     backgroundColor: theme.colors.primary[500],
+    borderRadius: 4,
   },
   progressText: {
     fontSize: 12,
@@ -477,6 +487,7 @@ const styles = StyleSheet.create({
   swipeActions: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: theme.spacing[2],
   },
   swipeAction: {
     justifyContent: 'center',
@@ -485,15 +496,15 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   editAction: {
-    backgroundColor: theme.colors.secondary[500],
+    backgroundColor: theme.colors.primary[500],
   },
   deleteAction: {
-    backgroundColor: '#FF6B6B',
+    backgroundColor: theme.colors.error,
   },
   swipeActionText: {
     color: theme.colors.text.inverse,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   emptyContainer: {
     flex: 1,
@@ -507,7 +518,7 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing[4],
   },
   emptyButton: {
-    marginTop: theme.spacing[2],
+    minWidth: 200,
   },
 });
 

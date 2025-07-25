@@ -22,6 +22,7 @@ export interface InputProps extends Omit<TextInputProps, 'style'> {
   errorStyle?: TextStyle;
   helperStyle?: TextStyle;
   required?: boolean;
+  value?: any;
 }
 
 const Input: React.FC<InputProps> = ({
@@ -36,6 +37,7 @@ const Input: React.FC<InputProps> = ({
   errorStyle,
   helperStyle,
   required,
+  value,
   ...textInputProps
 }) => {
   const [isFocused, setIsFocused] = useState(false);
@@ -79,6 +81,7 @@ const Input: React.FC<InputProps> = ({
           placeholderTextColor={theme.colors.text.disabled}
           onFocus={handleFocus}
           onBlur={handleBlur}
+          value={value?.toString() || ''}
           {...textInputProps}
         />
         

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -27,7 +27,23 @@ const ScheduleEditScreen: React.FC<ScheduleEditScreenProps> = ({ navigation, rou
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [schedule, setSchedule] = useState<ScheduleResponse | null>(null);
-  const [formData, setFormData] = useState<Partial<ScheduleRequest>>({});
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    color: '#6EC1E4',
+    scheduleDate: '',
+    startTime: '',
+    endTime: '',
+    isAllDay: false,
+    isRecurring: false,
+    studyMode: 'POMODORO',
+    plannedStudyMinutes: '',       // 숫자 필드도 string으로
+    plannedBreakMinutes: '',
+    studyGoal: '',
+    difficulty: 'MEDIUM',
+    reminderMinutes: '',
+    isReminderEnabled: true,
+  });
 
   useEffect(() => {
     loadSchedule();
@@ -48,11 +64,11 @@ const ScheduleEditScreen: React.FC<ScheduleEditScreenProps> = ({ navigation, rou
         isAllDay: data.isAllDay,
         isRecurring: data.isRecurring,
         studyMode: data.studyMode || 'POMODORO',
-        plannedStudyMinutes: data.plannedStudyMinutes || 25,
-        plannedBreakMinutes: data.plannedBreakMinutes || 5,
+        plannedStudyMinutes: data.plannedStudyMinutes?.toString() || '',
+        plannedBreakMinutes: data.plannedBreakMinutes?.toString() || '',
         studyGoal: data.studyGoal || '',
         difficulty: data.difficulty || 'MEDIUM',
-        reminderMinutes: data.reminderMinutes || 15,
+        reminderMinutes: data.reminderMinutes?.toString() || '',
         isReminderEnabled: data.isReminderEnabled,
       });
     } catch (error) {
@@ -64,9 +80,23 @@ const ScheduleEditScreen: React.FC<ScheduleEditScreenProps> = ({ navigation, rou
     }
   };
 
-  const handleInputChange = (field: keyof ScheduleRequest, value: any) => {
+  const handleInputChange = useCallback((field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-  };
+  }, []);
+
+  // 개별 필드 핸들러들
+  const handleTitleChange = useCallback((text: string) => handleInputChange('title', text), [handleInputChange]);
+  const handleDescriptionChange = useCallback((text: string) => handleInputChange('description', text), [handleInputChange]);
+  const handleStudyModeChange = useCallback((text: string) => handleInputChange('studyMode', text), [handleInputChange]);
+  const handleDifficultyChange = useCallback((text: string) => handleInputChange('difficulty', text), [handleInputChange]);
+  const handlePlannedStudyMinutesChange = useCallback((text: string) => handleInputChange('plannedStudyMinutes', text), [handleInputChange]);
+  const handlePlannedBreakMinutesChange = useCallback((text: string) => handleInputChange('plannedBreakMinutes', text), [handleInputChange]);
+  const handleStudyGoalChange = useCallback((text: string) => handleInputChange('studyGoal', text), [handleInputChange]);
+  const handleReminderMinutesChange = useCallback((text: string) => handleInputChange('reminderMinutes', text), [handleInputChange]);
+  const handleColorChange = useCallback((text: string) => handleInputChange('color', text), [handleInputChange]);
+  const handleScheduleDateChange = useCallback((text: string) => handleInputChange('scheduleDate', text), [handleInputChange]);
+  const handleStartTimeChange = useCallback((text: string) => handleInputChange('startTime', text), [handleInputChange]);
+  const handleEndTimeChange = useCallback((text: string) => handleInputChange('endTime', text), [handleInputChange]);
 
   const handleSubmit = async () => {
     if (!formData.title?.trim()) {
@@ -91,11 +121,11 @@ const ScheduleEditScreen: React.FC<ScheduleEditScreenProps> = ({ navigation, rou
         isAllDay: formData.isAllDay || false,
         isRecurring: formData.isRecurring || false,
         studyMode: formData.studyMode || 'POMODORO',
-        plannedStudyMinutes: formData.plannedStudyMinutes || 25,
-        plannedBreakMinutes: formData.plannedBreakMinutes || 5,
+        plannedStudyMinutes: parseInt(formData.plannedStudyMinutes || '25'),
+        plannedBreakMinutes: parseInt(formData.plannedBreakMinutes || '5'),
         studyGoal: formData.studyGoal || '',
         difficulty: formData.difficulty || 'MEDIUM',
-        reminderMinutes: formData.reminderMinutes || 15,
+        reminderMinutes: parseInt(formData.reminderMinutes || '15'),
         isReminderEnabled: formData.isReminderEnabled || true,
       };
 
@@ -165,7 +195,7 @@ const ScheduleEditScreen: React.FC<ScheduleEditScreenProps> = ({ navigation, rou
           <Input
             label="제목"
             value={formData.title}
-            onChangeText={(text) => handleInputChange('title', text)}
+            onChangeText={handleTitleChange}
             placeholder="스케줄 제목을 입력하세요"
             required
           />
@@ -173,7 +203,7 @@ const ScheduleEditScreen: React.FC<ScheduleEditScreenProps> = ({ navigation, rou
           <Input
             label="설명"
             value={formData.description}
-            onChangeText={(text) => handleInputChange('description', text)}
+            onChangeText={handleDescriptionChange}
             placeholder="스케줄에 대한 설명을 입력하세요"
             multiline
             numberOfLines={3}
@@ -182,7 +212,7 @@ const ScheduleEditScreen: React.FC<ScheduleEditScreenProps> = ({ navigation, rou
           <Input
             label="색상"
             value={formData.color}
-            onChangeText={(text) => handleInputChange('color', text)}
+            onChangeText={handleColorChange}
             placeholder="#6EC1E4"
           />
         </View>
@@ -194,7 +224,7 @@ const ScheduleEditScreen: React.FC<ScheduleEditScreenProps> = ({ navigation, rou
           <Input
             label="날짜"
             value={formData.scheduleDate}
-            onChangeText={(text) => handleInputChange('scheduleDate', text)}
+            onChangeText={handleScheduleDateChange}
             placeholder="YYYY-MM-DD"
             required
           />
@@ -202,14 +232,14 @@ const ScheduleEditScreen: React.FC<ScheduleEditScreenProps> = ({ navigation, rou
           <Input
             label="시작 시간"
             value={formData.startTime}
-            onChangeText={(text) => handleInputChange('startTime', text)}
+            onChangeText={handleStartTimeChange}
             placeholder="HH:mm"
           />
 
           <Input
             label="종료 시간"
             value={formData.endTime}
-            onChangeText={(text) => handleInputChange('endTime', text)}
+            onChangeText={handleEndTimeChange}
             placeholder="HH:mm"
           />
         </View>
@@ -223,7 +253,7 @@ const ScheduleEditScreen: React.FC<ScheduleEditScreenProps> = ({ navigation, rou
               <Input
                 label="학습 모드"
                 value={formData.studyMode}
-                onChangeText={(text) => handleInputChange('studyMode', text)}
+                onChangeText={handleStudyModeChange}
                 placeholder="POMODORO"
               />
             </View>
@@ -231,7 +261,7 @@ const ScheduleEditScreen: React.FC<ScheduleEditScreenProps> = ({ navigation, rou
               <Input
                 label="난이도"
                 value={formData.difficulty}
-                onChangeText={(text) => handleInputChange('difficulty', text)}
+                onChangeText={handleDifficultyChange}
                 placeholder="MEDIUM"
               />
             </View>
@@ -241,8 +271,8 @@ const ScheduleEditScreen: React.FC<ScheduleEditScreenProps> = ({ navigation, rou
             <View style={styles.halfInput}>
               <Input
                 label="계획 학습 시간 (분)"
-                value={formData.plannedStudyMinutes?.toString()}
-                onChangeText={(text) => handleInputChange('plannedStudyMinutes', parseInt(text) || 25)}
+                value={formData.plannedStudyMinutes}
+                onChangeText={(text) => handleInputChange('plannedStudyMinutes', text)}
                 placeholder="25"
                 keyboardType="numeric"
               />
@@ -250,8 +280,8 @@ const ScheduleEditScreen: React.FC<ScheduleEditScreenProps> = ({ navigation, rou
             <View style={styles.halfInput}>
               <Input
                 label="계획 휴식 시간 (분)"
-                value={formData.plannedBreakMinutes?.toString()}
-                onChangeText={(text) => handleInputChange('plannedBreakMinutes', parseInt(text) || 5)}
+                value={formData.plannedBreakMinutes}
+                onChangeText={(text) => handleInputChange('plannedBreakMinutes', text)}
                 placeholder="5"
                 keyboardType="numeric"
               />
@@ -261,7 +291,7 @@ const ScheduleEditScreen: React.FC<ScheduleEditScreenProps> = ({ navigation, rou
           <Input
             label="학습 목표"
             value={formData.studyGoal}
-            onChangeText={(text) => handleInputChange('studyGoal', text)}
+            onChangeText={handleStudyGoalChange}
             placeholder="이번 학습의 목표를 설정하세요"
             multiline
             numberOfLines={2}
@@ -274,8 +304,8 @@ const ScheduleEditScreen: React.FC<ScheduleEditScreenProps> = ({ navigation, rou
           
           <Input
             label="알림 시간 (분 전)"
-            value={formData.reminderMinutes?.toString()}
-            onChangeText={(text) => handleInputChange('reminderMinutes', parseInt(text) || 15)}
+            value={formData.reminderMinutes}
+            onChangeText={(text) => handleInputChange('reminderMinutes', text)}
             placeholder="15"
             keyboardType="numeric"
           />

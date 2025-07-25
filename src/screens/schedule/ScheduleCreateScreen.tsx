@@ -3,17 +3,15 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   Alert,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../../theme';
-import Input from '../../components/common/Input';
 import Button from '../../components/common/Button';
 import { scheduleService } from '../../services/scheduleService';
-import { ScheduleRequest } from '../../types/schedule';
-import { Platform } from 'react-native';
 
 interface ScheduleCreateScreenProps {
   navigation: any;
@@ -26,7 +24,7 @@ interface ScheduleCreateScreenProps {
 
 const ScheduleCreateScreen: React.FC<ScheduleCreateScreenProps> = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<Partial<ScheduleRequest>>({
+  const [formData, setFormData] = useState({
     title: '',
     description: '',
     color: '#6EC1E4',
@@ -36,66 +34,119 @@ const ScheduleCreateScreen: React.FC<ScheduleCreateScreenProps> = ({ navigation,
     isAllDay: false,
     isRecurring: false,
     studyMode: 'POMODORO',
-    plannedStudyMinutes: 25,
-    plannedBreakMinutes: 5,
+    plannedStudyMinutes: '25',
+    plannedBreakMinutes: '5',
     studyGoal: '',
     difficulty: 'MEDIUM',
-    reminderMinutes: 15,
+    reminderMinutes: '15',
     isReminderEnabled: true,
   });
 
-  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
-  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
-
-  const handleInputChange = (field: keyof ScheduleRequest, value: any) => {
+  const handleOptionSelect = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleStartTimeChange = (event: any, selectedTime?: Date) => {
-    setShowStartTimePicker(false);
-    if (selectedTime) {
-      const timeString = selectedTime.toTimeString().substring(0, 5);
-      handleInputChange('startTime', timeString);
-    }
-  };
+  const renderTextInput = (
+    title: string,
+    field: string,
+    placeholder: string,
+    required: boolean = false
+  ) => (
+    <View style={styles.inputGroup}>
+      <Text style={styles.inputTitle}>
+        {title} {required && <Text style={styles.required}>*</Text>}
+      </Text>
+      <TouchableOpacity
+        style={styles.textInput}
+        onPress={() => {
+          Alert.prompt(
+            title,
+            placeholder,
+            [
+              { text: '취소', style: 'cancel' },
+              {
+                text: '확인',
+                onPress: (text) => {
+                  if (text) {
+                    handleOptionSelect(field, text);
+                  }
+                },
+              },
+            ],
+            'plain-text',
+            formData[field as keyof typeof formData] as string
+          );
+        }}
+      >
+        <Text style={formData[field as keyof typeof formData] ? styles.textInputText : styles.textInputPlaceholder}>
+          {formData[field as keyof typeof formData] || placeholder}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
 
-  const handleEndTimeChange = (event: any, selectedTime?: Date) => {
-    setShowEndTimePicker(false);
-    if (selectedTime) {
-      const timeString = selectedTime.toTimeString().substring(0, 5);
-      handleInputChange('endTime', timeString);
-    }
-  };
+  const renderOptionGroup = (
+    title: string,
+    field: string,
+    options: string[],
+    required: boolean = false
+  ) => (
+    <View style={styles.optionGroup}>
+      <Text style={styles.optionTitle}>
+        {title} {required && <Text style={styles.required}>*</Text>}
+      </Text>
+      <View style={styles.optionsContainer}>
+        {options.map((option) => (
+          <TouchableOpacity
+            key={option}
+            style={[
+              styles.optionButton,
+              formData[field as keyof typeof formData] === option && styles.selectedOption,
+            ]}
+            onPress={() => handleOptionSelect(field, option)}
+          >
+            <Text
+              style={[
+                styles.optionText,
+                formData[field as keyof typeof formData] === option && styles.selectedOptionText,
+              ]}
+            >
+              {option}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
 
   const handleSubmit = async () => {
-    if (!formData.title?.trim()) {
-      Alert.alert('오류', '제목을 입력해주세요.');
-      return;
-    }
-
-    if (!formData.scheduleDate) {
-      Alert.alert('오류', '날짜를 선택해주세요.');
+    // 필수 필드 검증
+    const requiredFields = ['title', 'scheduleDate'];
+    const missingFields = requiredFields.filter(field => !formData[field as keyof typeof formData]);
+    
+    if (missingFields.length > 0) {
+      Alert.alert('입력 필요', '모든 필수 항목을 입력해주세요.');
       return;
     }
 
     try {
       setLoading(true);
-      const request: ScheduleRequest = {
-        title: formData.title!,
-        description: formData.description || '',
-        color: formData.color || '#6EC1E4',
-        scheduleDate: formData.scheduleDate!,
+      const request = {
+        title: formData.title,
+        description: formData.description,
+        color: formData.color,
+        scheduleDate: formData.scheduleDate,
         startTime: formData.startTime || undefined,
         endTime: formData.endTime || undefined,
-        isAllDay: formData.isAllDay || false,
-        isRecurring: formData.isRecurring || false,
-        studyMode: formData.studyMode || 'POMODORO',
-        plannedStudyMinutes: formData.plannedStudyMinutes || 25,
-        plannedBreakMinutes: formData.plannedBreakMinutes || 5,
-        studyGoal: formData.studyGoal || '',
-        difficulty: formData.difficulty || 'MEDIUM',
-        reminderMinutes: formData.reminderMinutes || 15,
-        isReminderEnabled: formData.isReminderEnabled || true,
+        isAllDay: formData.isAllDay,
+        isRecurring: formData.isRecurring,
+        studyMode: formData.studyMode,
+        plannedStudyMinutes: parseInt(formData.plannedStudyMinutes) || 25,
+        plannedBreakMinutes: parseInt(formData.plannedBreakMinutes) || 5,
+        studyGoal: formData.studyGoal,
+        difficulty: formData.difficulty,
+        reminderMinutes: parseInt(formData.reminderMinutes) || 15,
+        isReminderEnabled: formData.isReminderEnabled,
       };
 
       await scheduleService.createSchedule(request);
@@ -142,165 +193,57 @@ const ScheduleCreateScreen: React.FC<ScheduleCreateScreenProps> = ({ navigation,
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>새 스케줄 만들기</Text>
+        <Text style={styles.headerTitle}>📅 새 스케줄 만들기</Text>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
+          <Text style={styles.closeButtonText}>✕</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* 기본 정보 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📝 기본 정보</Text>
-          
-          <Input
-            label="제목"
-            value={formData.title}
-            onChangeText={(text) => handleInputChange('title', text)}
-            placeholder="스케줄 제목을 입력하세요"
-            required
-          />
+        <View style={styles.card}>
+          <Text style={styles.description}>
+            새로운 스케줄을 만들어 학습 계획을 세워보세요!
+          </Text>
 
-          <Input
-            label="설명"
-            value={formData.description}
-            onChangeText={(text) => handleInputChange('description', text)}
-            placeholder="스케줄에 대한 설명을 입력하세요"
-            multiline
-            numberOfLines={3}
-          />
+          {/* 기본 정보 */}
+          {renderTextInput('제목', 'title', '스케줄 제목을 입력하세요', true)}
+          {renderTextInput('설명', 'description', '스케줄에 대한 설명을 입력하세요')}
+          {renderTextInput('색상', 'color', '#6EC1E4')}
+          {renderTextInput('날짜', 'scheduleDate', 'YYYY-MM-DD', true)}
+          {renderTextInput('시작 시간', 'startTime', 'HH:MM')}
+          {renderTextInput('종료 시간', 'endTime', 'HH:MM')}
 
-          <Input
-            label="색상"
-            value={formData.color}
-            onChangeText={(text) => handleInputChange('color', text)}
-            placeholder="#6EC1E4"
-          />
-        </View>
+          {/* 학습 설정 */}
+          {renderOptionGroup('학습 모드', 'studyMode', ['POMODORO', 'FOCUS', 'BREAK'], true)}
+          {renderOptionGroup('난이도', 'difficulty', ['EASY', 'MEDIUM', 'HARD'], true)}
+          {renderTextInput('계획 학습 시간 (분)', 'plannedStudyMinutes', '25')}
+          {renderTextInput('계획 휴식 시간 (분)', 'plannedBreakMinutes', '5')}
+          {renderTextInput('학습 목표', 'studyGoal', '이번 학습의 목표를 설정하세요')}
+          {renderTextInput('알림 시간 (분 전)', 'reminderMinutes', '15')}
 
-        {/* 날짜/시간 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📅 날짜 & 시간</Text>
-          
-          <Input
-            label="날짜"
-            value={formData.scheduleDate}
-            onChangeText={(text) => handleInputChange('scheduleDate', text)}
-            placeholder="YYYY-MM-DD"
-            required
-          />
-
-          <View style={styles.timeContainer}>
-            <View style={styles.timeInput}>
-              <Text style={styles.inputLabel}>시작 시간</Text>
-              <Button
-                title={formData.startTime || '시간 선택'}
-                onPress={() => setShowStartTimePicker(true)}
-                variant="outline"
-                size="sm"
-              />
-            </View>
-
-            <View style={styles.timeInput}>
-              <Text style={styles.inputLabel}>종료 시간</Text>
-              <Button
-                title={formData.endTime || '시간 선택'}
-                onPress={() => setShowEndTimePicker(true)}
-                variant="outline"
-                size="sm"
-              />
-            </View>
-          </View>
-
-
-        </View>
-
-        {/* 학습 설정 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>📚 학습 설정</Text>
-          
-          <View style={styles.row}>
-            <View style={styles.halfInput}>
-              <Input
-                label="학습 모드"
-                value={formData.studyMode}
-                onChangeText={(text) => handleInputChange('studyMode', text)}
-                placeholder="POMODORO"
-              />
-            </View>
-            <View style={styles.halfInput}>
-              <Input
-                label="난이도"
-                value={formData.difficulty}
-                onChangeText={(text) => handleInputChange('difficulty', text)}
-                placeholder="MEDIUM"
-              />
-            </View>
-          </View>
-
-          <View style={styles.row}>
-            <View style={styles.halfInput}>
-              <Input
-                label="계획 학습 시간 (분)"
-                value={formData.plannedStudyMinutes?.toString()}
-                onChangeText={(text) => handleInputChange('plannedStudyMinutes', parseInt(text) || 25)}
-                placeholder="25"
-                keyboardType="numeric"
-              />
-            </View>
-            <View style={styles.halfInput}>
-              <Input
-                label="계획 휴식 시간 (분)"
-                value={formData.plannedBreakMinutes?.toString()}
-                onChangeText={(text) => handleInputChange('plannedBreakMinutes', parseInt(text) || 5)}
-                placeholder="5"
-                keyboardType="numeric"
-              />
-            </View>
-          </View>
-
-          <Input
-            label="학습 목표"
-            value={formData.studyGoal}
-            onChangeText={(text) => handleInputChange('studyGoal', text)}
-            placeholder="이번 학습의 목표를 설정하세요"
-            multiline
-            numberOfLines={2}
-          />
-        </View>
-
-        {/* 알림 설정 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>🔔 알림 설정</Text>
-          
-          <Input
-            label="알림 시간 (분 전)"
-            value={formData.reminderMinutes?.toString()}
-            onChangeText={(text) => handleInputChange('reminderMinutes', parseInt(text) || 15)}
-            placeholder="15"
-            keyboardType="numeric"
-          />
-        </View>
-
-        {/* 미리보기 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>👀 미리보기</Text>
-          <View style={[styles.previewCard, { borderLeftColor: formData.color }]}>
-            <Text style={styles.previewTitle}>{formData.title || '제목 미입력'}</Text>
-            <Text style={styles.previewTime}>
-              {formData.startTime && formData.endTime 
-                ? `${formData.startTime} - ${formData.endTime}`
-                : '종일'
-              }
-            </Text>
-            {formData.studyGoal && (
-              <Text style={styles.previewGoal}>목표: {formData.studyGoal}</Text>
-            )}
-            <View style={styles.previewBadges}>
-              <View style={[styles.previewBadge, { backgroundColor: getDifficultyColor(formData.difficulty || 'MEDIUM') }]}>
-                <Text style={styles.previewBadgeText}>
-                  {getDifficultyText(formData.difficulty || 'MEDIUM')}
-                </Text>
-              </View>
-              <View style={[styles.previewBadge, { backgroundColor: theme.colors.primary[500] }]}>
-                <Text style={styles.previewBadgeText}>{formData.studyMode || 'POMODORO'}</Text>
+          {/* 미리보기 */}
+          <View style={styles.previewSection}>
+            <Text style={styles.previewTitle}>👀 미리보기</Text>
+            <View style={[styles.previewCard, { borderLeftColor: formData.color }]}>
+              <Text style={styles.previewCardTitle}>{formData.title || '제목 미입력'}</Text>
+              <Text style={styles.previewCardTime}>
+                {formData.startTime && formData.endTime 
+                  ? `${formData.startTime} - ${formData.endTime}`
+                  : '종일'
+                }
+              </Text>
+              {formData.studyGoal && (
+                <Text style={styles.previewCardGoal}>목표: {formData.studyGoal}</Text>
+              )}
+              <View style={styles.previewCardBadges}>
+                <View style={[styles.previewCardBadge, { backgroundColor: getDifficultyColor(formData.difficulty) }]}>
+                  <Text style={styles.previewCardBadgeText}>
+                    {getDifficultyText(formData.difficulty)}
+                  </Text>
+                </View>
+                <View style={[styles.previewCardBadge, { backgroundColor: theme.colors.primary[500] }]}>
+                  <Text style={styles.previewCardBadgeText}>{formData.studyMode}</Text>
+                </View>
               </View>
             </View>
           </View>
@@ -341,97 +284,168 @@ const styles = StyleSheet.create({
     color: theme.colors.text.secondary,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: theme.spacing[4],
     paddingVertical: theme.spacing[3],
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border.light,
   },
-  title: {
-    fontSize: 24,
+  headerTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
     color: theme.colors.text.primary,
+  },
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: theme.colors.background.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    fontSize: 18,
+    color: theme.colors.text.secondary,
   },
   content: {
     flex: 1,
     padding: theme.spacing[4],
   },
-  section: {
-    marginBottom: theme.spacing[6],
+  card: {
+    backgroundColor: theme.colors.background.secondary,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing[4],
   },
-  sectionTitle: {
+  description: {
+    fontSize: 16,
+    color: theme.colors.text.secondary,
+    marginBottom: theme.spacing[4],
+    textAlign: 'center',
+  },
+  inputGroup: {
+    marginBottom: theme.spacing[4],
+  },
+  inputTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing[2],
+  },
+  textInput: {
+    backgroundColor: theme.colors.background.primary,
+    borderRadius: theme.borderRadius.base,
+    padding: theme.spacing[3],
+    borderWidth: 1,
+    borderColor: theme.colors.border.light,
+  },
+  textInputText: {
+    fontSize: 16,
+    color: theme.colors.text.primary,
+  },
+  textInputPlaceholder: {
+    fontSize: 16,
+    color: theme.colors.text.disabled,
+  },
+  optionGroup: {
+    marginBottom: theme.spacing[4],
+  },
+  optionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing[2],
+  },
+  optionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing[2],
+  },
+  optionButton: {
+    backgroundColor: theme.colors.background.primary,
+    borderRadius: theme.borderRadius.base,
+    paddingHorizontal: theme.spacing[3],
+    paddingVertical: theme.spacing[2],
+    borderWidth: 1,
+    borderColor: theme.colors.border.light,
+  },
+  selectedOption: {
+    backgroundColor: theme.colors.primary[500],
+    borderColor: theme.colors.primary[500],
+  },
+  optionText: {
+    fontSize: 14,
+    color: theme.colors.text.primary,
+  },
+  selectedOptionText: {
+    color: theme.colors.text.inverse,
+    fontWeight: '600',
+  },
+  required: {
+    color: theme.colors.error,
+  },
+  previewSection: {
+    marginTop: theme.spacing[4],
+    paddingTop: theme.spacing[4],
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border.light,
+  },
+  previewTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: theme.colors.text.primary,
     marginBottom: theme.spacing[3],
   },
-  timeContainer: {
-    flexDirection: 'row',
-    gap: theme.spacing[3],
-  },
-  timeInput: {
-    flex: 1,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: theme.colors.text.primary,
-    marginBottom: theme.spacing[1],
-  },
-  row: {
-    flexDirection: 'row',
-    gap: theme.spacing[3],
-  },
-  halfInput: {
-    flex: 1,
-  },
   previewCard: {
-    backgroundColor: theme.colors.background.secondary,
+    backgroundColor: theme.colors.background.primary,
+    borderRadius: theme.borderRadius.lg,
     padding: theme.spacing[4],
-    borderRadius: 12,
     borderLeftWidth: 4,
   },
-  previewTitle: {
-    fontSize: 16,
+  previewCardTitle: {
+    fontSize: 18,
     fontWeight: '600',
     color: theme.colors.text.primary,
-    marginBottom: theme.spacing[1],
+    marginBottom: theme.spacing[2],
   },
-  previewTime: {
-    fontSize: 14,
-    color: theme.colors.text.secondary,
-    marginBottom: theme.spacing[1],
-  },
-  previewGoal: {
+  previewCardTime: {
     fontSize: 14,
     color: theme.colors.text.secondary,
     marginBottom: theme.spacing[2],
   },
-  previewBadges: {
+  previewCardGoal: {
+    fontSize: 14,
+    color: theme.colors.text.secondary,
+    marginBottom: theme.spacing[3],
+  },
+  previewCardBadges: {
     flexDirection: 'row',
     gap: theme.spacing[2],
   },
-  previewBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+  previewCardBadge: {
+    paddingHorizontal: theme.spacing[3],
+    paddingVertical: theme.spacing[1],
+    borderRadius: theme.borderRadius.full,
   },
-  previewBadgeText: {
+  previewCardBadgeText: {
     fontSize: 12,
     color: theme.colors.text.inverse,
     fontWeight: '500',
   },
   footer: {
     flexDirection: 'row',
-    padding: theme.spacing[4],
     gap: theme.spacing[3],
+    padding: theme.spacing[4],
     borderTopWidth: 1,
     borderTopColor: theme.colors.border.light,
+    backgroundColor: theme.colors.background.primary,
   },
   cancelButton: {
     flex: 1,
   },
   submitButton: {
-    flex: 2,
+    flex: 1,
   },
 });
 
