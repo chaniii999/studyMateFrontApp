@@ -21,6 +21,7 @@ export interface InputProps extends Omit<TextInputProps, 'style'> {
   labelStyle?: TextStyle;
   errorStyle?: TextStyle;
   helperStyle?: TextStyle;
+  required?: boolean;
 }
 
 const Input: React.FC<InputProps> = ({
@@ -34,6 +35,7 @@ const Input: React.FC<InputProps> = ({
   labelStyle,
   errorStyle,
   helperStyle,
+  required,
   ...textInputProps
 }) => {
   const [isFocused, setIsFocused] = useState(false);
@@ -52,7 +54,7 @@ const Input: React.FC<InputProps> = ({
     <View style={[styles.container, containerStyle]}>
       {label && (
         <Text style={[styles.label, labelStyle]}>
-          {label}
+          {label}{required && <Text style={styles.required}> *</Text>}
         </Text>
       )}
       
@@ -70,8 +72,8 @@ const Input: React.FC<InputProps> = ({
         <TextInput
           style={[
             styles.input,
-            leftIcon && styles.inputWithLeftIcon,
-            rightIcon && styles.inputWithRightIcon,
+            leftIcon ? styles.inputWithLeftIcon : undefined,
+            rightIcon ? styles.inputWithRightIcon : undefined,
             inputStyle,
           ]}
           placeholderTextColor={theme.colors.text.disabled}
@@ -165,6 +167,9 @@ const styles = StyleSheet.create({
   },
   
   errorText: {
+    color: theme.colors.error,
+  },
+  required: {
     color: theme.colors.error,
   },
 });

@@ -1,84 +1,102 @@
 // 스케줄 관련 타입 정의
-export interface Schedule {
+
+// 스케줄 상태
+export enum ScheduleStatus {
+  PLANNED = 'PLANNED',      // 계획됨
+  IN_PROGRESS = 'IN_PROGRESS',  // 진행 중
+  COMPLETED = 'COMPLETED',    // 완료됨
+  CANCELLED = 'CANCELLED',    // 취소됨
+  POSTPONED = 'POSTPONED'     // 연기됨
+}
+
+// 학습 주제 정보
+export interface StudyTopic {
   id: string;
-  title?: string; // 제목
-  color?: string; // 스케줄의 표시될 배경색
-  description?: string; // 설명
-  summary?: string; // AI 요약
-  startTime?: string; // 시작 시간
-  endTime?: string; // 종료 시간
+  name: string;
+}
+
+// 스케줄 생성/수정 요청
+export interface ScheduleRequest {
+  title: string;
+  description?: string;
+  color?: string;
+  scheduleDate: string; // YYYY-MM-DD 형식
+  startTime?: string; // HH:mm 형식
+  endTime?: string; // HH:mm 형식
+  isAllDay?: boolean;
+  isRecurring?: boolean;
+  recurrenceRule?: string;
+  studyMode?: string;
+  plannedStudyMinutes?: number;
+  plannedBreakMinutes?: number;
+  studyGoal?: string;
+  difficulty?: string;
+  reminderMinutes?: number;
+  isReminderEnabled?: boolean;
+  topicId?: number;
+}
+
+// 스케줄 응답
+export interface ScheduleResponse {
+  id: string;
+  title: string;
+  description?: string;
+  color?: string;
+  scheduleDate: string;
+  startTime?: string;
+  endTime?: string;
+  isAllDay: boolean;
+  isRecurring: boolean;
+  recurrenceRule?: string;
+  studyMode?: string;
+  plannedStudyMinutes?: number;
+  plannedBreakMinutes?: number;
+  studyGoal?: string;
+  difficulty?: string;
+  status: ScheduleStatus;
+  completionRate: number;
+  isOverdue: boolean;
+  reminderMinutes?: number;
+  isReminderEnabled: boolean;
+  topic?: StudyTopic;
+  totalStudyTime?: number; // 초 단위
+  totalRestTime?: number; // 초 단위
+  actualStudyMinutes?: number;
+  actualRestMinutes?: number;
+  aiSummary?: string;
+  aiSuggestions?: string;
   createdAt: string;
   updatedAt: string;
-  topicId?: string; // 연결된 학습 주제 ID
-}
-
-// 스케줄 생성 요청
-export interface CreateScheduleRequest {
-  title?: string;
-  color?: string;
-  description?: string;
-  startTime?: string;
-  endTime?: string;
-  topicId?: string;
-}
-
-// 스케줄 업데이트 요청
-export interface UpdateScheduleRequest {
-  title?: string;
-  color?: string;
-  description?: string;
-  startTime?: string;
-  endTime?: string;
-  topicId?: string;
 }
 
 // 스케줄 필터
 export interface ScheduleFilter {
   startDate?: string;
   endDate?: string;
-  topicId?: string;
-  search?: string; // 제목 검색
-  limit?: number;
-  offset?: number;
+  status?: ScheduleStatus;
+  topicId?: number;
 }
 
-// 일일 스케줄
-export interface DailySchedule {
+// 캘린더 이벤트
+export interface CalendarEvent {
+  id: string;
+  title: string;
   date: string;
-  schedules: Schedule[];
-  totalStudyTime: number; // 총 학습 시간 (분)
-  completedSessions: number; // 완료된 세션 수
-  plannedSessions: number; // 계획된 세션 수
-}
-
-// 주간 스케줄
-export interface WeeklySchedule {
-  weekStart: string; // 주 시작일
-  weekEnd: string; // 주 종료일
-  dailySchedules: DailySchedule[];
-  totalStudyTime: number; // 주간 총 학습 시간 (분)
-  averageDailyStudyTime: number; // 일평균 학습 시간 (분)
-  completionRate: number; // 완료율 (%)
-}
-
-// 월간 스케줄
-export interface MonthlySchedule {
-  month: string; // YYYY-MM 형식
-  weeklySchedules: WeeklySchedule[];
-  totalStudyTime: number; // 월간 총 학습 시간 (분)
-  totalSessions: number; // 총 세션 수
-  averageDailyStudyTime: number; // 일평균 학습 시간 (분)
-  mostProductiveDay: string; // 가장 생산적인 요일
-  mostProductiveTime: string; // 가장 생산적인 시간대
+  startTime?: string;
+  endTime?: string;
+  color?: string;
+  isAllDay: boolean;
+  status: ScheduleStatus;
+  schedule: ScheduleResponse;
 }
 
 // 스케줄 통계
 export interface ScheduleStatistics {
   totalSchedules: number;
   completedSchedules: number;
-  totalStudyTime: number; // 총 학습 시간 (분)
-  averageSessionLength: number; // 평균 세션 길이 (분)
-  completionRate: number; // 완료율 (%)
-  currentStreak: number; // 현재 연속 학습일
-  bestStreak: number; // 최고 연속 학습일
+  inProgressSchedules: number;
+  overdueSchedules: number;
+  averageCompletionRate: number;
+  totalPlannedStudyTime: number; // 분 단위
+  totalActualStudyTime: number; // 분 단위
 } 

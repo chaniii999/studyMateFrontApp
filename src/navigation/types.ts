@@ -4,7 +4,7 @@ import { NavigatorScreenParams } from '@react-navigation/native';
 export type MainTabParamList = {
   Home: undefined;
   Timer: NavigatorScreenParams<TimerStackParamList>;
-  Schedule: undefined;
+  Schedule: NavigatorScreenParams<ScheduleStackParamList>;
   Statistics: undefined;
   Profile: undefined;
 };
@@ -26,10 +26,12 @@ export type TimerStackParamList = {
   SessionComplete: { timerId: number; studyTime: number };
 };
 
-// 스케쥴 스택 네비게이션 파라미터 (새로 추가)
+// 스케쥴 스택 네비게이션 파라미터
 export type ScheduleStackParamList = {
   ScheduleScreen: undefined;
-  // 추후 스케쥴 관련 다른 화면 추가 가능
+  ScheduleCreate: { selectedDate?: string };
+  ScheduleDetail: { scheduleId: string };
+  ScheduleEdit: { scheduleId: string };
 };
 
 // 통계 스택 네비게이션 파라미터
