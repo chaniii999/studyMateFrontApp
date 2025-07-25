@@ -18,7 +18,7 @@ import { ko } from 'date-fns/locale';
 import { useFocusEffect } from '@react-navigation/native';
 import { scheduleService } from '../../services/scheduleService';
 import { ScheduleResponse, ScheduleStatus } from '../../types/schedule';
-import Card from '../../components/common/Card';
+
 import Button from '../../components/common/Button';
 
 // 한글 설정 (date-fns용)

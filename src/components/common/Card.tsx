@@ -21,14 +21,40 @@ const Card: React.FC<CardProps> = ({
   elevation = 'sm',
   borderRadius = 'md',
 }) => {
+  const getPaddingStyle = () => {
+    switch (padding) {
+      case 'sm': return styles.paddingSm;
+      case 'lg': return styles.paddingLg;
+      default: return styles.paddingMd;
+    }
+  };
+
+  const getElevationStyle = () => {
+    switch (elevation) {
+      case 'md': return styles.elevationMd;
+      case 'lg': return styles.elevationLg;
+      default: return styles.elevationSm;
+    }
+  };
+
+  const getBorderRadiusStyle = () => {
+    switch (borderRadius) {
+      case 'sm': return styles.borderRadiusSm;
+      case 'lg': return styles.borderRadiusLg;
+      default: return styles.borderRadiusMd;
+    }
+  };
+
   return (
-    <View style={[
-      styles.base,
-      styles[`padding${padding.charAt(0).toUpperCase() + padding.slice(1)}`],
-      styles[`elevation${elevation.charAt(0).toUpperCase() + elevation.slice(1)}`],
-      styles[`borderRadius${borderRadius.charAt(0).toUpperCase() + borderRadius.slice(1)}`],
-      style,
-    ]}>
+    <View 
+      style={[
+        styles.base,
+        getPaddingStyle(),
+        getElevationStyle(),
+        getBorderRadiusStyle(),
+        style,
+      ]}
+    >
       {children}
     </View>
   );
