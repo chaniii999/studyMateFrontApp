@@ -8,17 +8,18 @@ import {
   FlatList, 
   Alert,
   ActivityIndicator,
-  RefreshControl
+  RefreshControl,
+  ScrollView,
+  Animated
 } from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { Swipeable } from 'react-native-gesture-handler';
 import { theme } from '../../theme';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, addWeeks, subWeeks, eachDayOfInterval } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useFocusEffect } from '@react-navigation/native';
 import { scheduleService } from '../../services/scheduleService';
 import { ScheduleResponse, ScheduleStatus } from '../../types/schedule';
-
 import Button from '../../components/common/Button';
 
 // 한글 설정 (date-fns용)
@@ -39,7 +40,8 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [viewMode, setViewMode] = useState<'monthly' | 'weekly' | 'daily'>('monthly');
+  const [viewMode, setViewMode] = useState<'monthly' | 'weekly'>('monthly');
+  const [scrollY] = useState(new Animated.Value(0));
 
   // 스케줄 데이터 로드
   const loadSchedules = async () => {
@@ -113,28 +115,36 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ navigation }) => {
   const filteredSchedules = useMemo(() => {
     const date = new Date(selectedDate);
     
-    if (viewMode === 'daily') {
-      return schedules.filter(schedule => schedule.scheduleDate === selectedDate);
-    }
-    
-    let interval;
     if (viewMode === 'weekly') {
-      interval = {
-        start: startOfWeek(date, { weekStartsOn: 0 }),
-        end: endOfWeek(date, { weekStartsOn: 0 }),
-      };
+      // 주간 모드: 해당 주의 모든 스케줄을 시간순으로 표시
+      const weekStart = startOfWeek(date, { weekStartsOn: 0 });
+      const weekEnd = endOfWeek(date, { weekStartsOn: 0 });
+      
+      return schedules.filter(schedule => {
+        const scheduleDate = new Date(schedule.scheduleDate);
+        return isWithinInterval(scheduleDate, { start: weekStart, end: weekEnd });
+      }).sort((a, b) => {
+        // 날짜순 정렬 후 시간순 정렬
+        const dateComparison = new Date(a.scheduleDate).getTime() - new Date(b.scheduleDate).getTime();
+        if (dateComparison !== 0) return dateComparison;
+        
+        // 같은 날짜인 경우 시작 시간으로 정렬
+        const timeA = a.startTime || '00:00';
+        const timeB = b.startTime || '00:00';
+        return timeA.localeCompare(timeB);
+      });
     } else {
-      interval = {
-        start: startOfMonth(date),
-        end: endOfMonth(date),
-      };
+      // 월간 모드: 선택된 날짜의 스케줄만 표시
+      return schedules.filter(schedule => {
+        return schedule.scheduleDate === selectedDate;
+      }).sort((a, b) => {
+        // 시작 시간순 정렬
+        const timeA = a.startTime || '00:00';
+        const timeB = b.startTime || '00:00';
+        return timeA.localeCompare(timeB);
+      });
     }
-
-    return schedules.filter(schedule => {
-      const scheduleDate = new Date(schedule.scheduleDate);
-      return isWithinInterval(scheduleDate, interval);
-    }).sort((a, b) => new Date(a.scheduleDate).getTime() - new Date(b.scheduleDate).getTime());
-  }, [schedules, viewMode, selectedDate]);
+  }, [schedules, selectedDate, viewMode]);
 
   // 캘린더 마킹 데이터
   const markedDates = useMemo(() => {
@@ -157,6 +167,28 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ navigation }) => {
     return dots;
   }, [schedules, selectedDate]);
 
+  // 주간 모드용 날짜 데이터
+  const weekDates = useMemo(() => {
+    if (viewMode === 'weekly') {
+      const date = new Date(selectedDate);
+      const weekStart = startOfWeek(date, { weekStartsOn: 0 });
+      const weekEnd = endOfWeek(date, { weekStartsOn: 0 });
+      
+      const dates = eachDayOfInterval({ start: weekStart, end: weekEnd }).map((date, index) => ({
+        dateString: date.toISOString().split('T')[0],
+        day: format(date, 'd'),
+        dayName: format(date, 'EEE', { locale: ko }),
+        isToday: format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd'),
+        isSelected: format(date, 'yyyy-MM-dd') === selectedDate,
+        index: index,
+      }));
+      
+      console.log('주간 날짜 데이터:', dates.map(d => ({ date: d.dateString, day: d.day, index: d.index })));
+      return dates;
+    }
+    return [];
+  }, [selectedDate, viewMode]);
+
   // 시간 포맷팅
   const formatTime = (time?: string) => {
     if (!time) return '종일';
@@ -166,11 +198,18 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ navigation }) => {
   // 캘린더 날짜 클릭 핸들러
   const handleDayPress = (day: any) => {
     setSelectedDate(day.dateString);
-    // 해당 날짜에 스케줄이 없으면 생성 페이지로 이동
-    const hasSchedule = schedules.some(schedule => schedule.scheduleDate === day.dateString);
-    if (!hasSchedule) {
-      navigation.navigate('ScheduleCreate', { selectedDate: day.dateString });
-    }
+  };
+
+  // 주간 날짜 클릭 핸들러
+  const handleWeekDayPress = (dateString: string) => {
+    setSelectedDate(dateString);
+  };
+
+  // 주간 이동 핸들러
+  const handleWeekChange = (direction: 'prev' | 'next') => {
+    const currentDate = new Date(selectedDate);
+    const newDate = direction === 'next' ? addWeeks(currentDate, 1) : subWeeks(currentDate, 1);
+    setSelectedDate(newDate.toISOString().split('T')[0]);
   };
 
   // 스케줄 클릭 핸들러
@@ -244,7 +283,7 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ navigation }) => {
         >
           <View style={styles.scheduleHeader}>
             <Text style={styles.scheduleTitle}>{item.title}</Text>
-            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+            <View style={[styles.statusBadge, { backgroundColor: getStatusText(item.status) }]}>
               <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
             </View>
           </View>
@@ -280,17 +319,72 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ navigation }) => {
 
   // 뷰 모드 변경
   const handleViewModeChange = () => {
-    if (viewMode === 'monthly') setViewMode('weekly');
-    else if (viewMode === 'weekly') setViewMode('daily');
-    else setViewMode('monthly');
+    setViewMode(viewMode === 'monthly' ? 'weekly' : 'monthly');
   };
 
   const getViewModeTitle = () => {
     switch (viewMode) {
       case 'monthly': return '월간';
       case 'weekly': return '주간';
-      case 'daily': return '일간';
+      default: return '월간';
     }
+  };
+
+  // 주간 날짜 렌더러
+  const renderWeekDays = () => {
+    return (
+      <View style={styles.weekDaysContainer}>
+        <View style={styles.weekNavigation}>
+          <TouchableOpacity onPress={() => handleWeekChange('prev')} style={styles.weekNavButton}>
+            <Text style={styles.weekNavText}>◀</Text>
+          </TouchableOpacity>
+          <Text style={styles.weekTitle}>
+            {format(new Date(selectedDate), 'M월 d일', { locale: ko })} 주
+          </Text>
+          <TouchableOpacity onPress={() => handleWeekChange('next')} style={styles.weekNavButton}>
+            <Text style={styles.weekNavText}>▶</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.weekDays}>
+          {weekDates.map((day, index) => (
+            <TouchableOpacity
+              key={day.dateString}
+              style={[
+                styles.weekDay,
+                day.isSelected && styles.selectedWeekDay,
+                day.isToday && styles.todayWeekDay,
+              ]}
+              onPress={() => {
+                console.log('클릭된 날짜:', day.dateString, '인덱스:', index);
+                handleWeekDayPress(day.dateString);
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={[
+                styles.weekDayName,
+                day.isSelected && styles.selectedWeekDayText,
+                day.isToday && styles.todayWeekDayText,
+              ]}>
+                {day.dayName}
+              </Text>
+              <Text style={[
+                styles.weekDayNumber,
+                day.isSelected && styles.selectedWeekDayText,
+                day.isToday && styles.todayWeekDayText,
+              ]}>
+                {day.day}
+              </Text>
+              {markedDates[day.dateString]?.marked && (
+                <View style={[
+                  styles.weekDayDot,
+                  { backgroundColor: markedDates[day.dateString].dotColor }
+                ]} />
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    );
   };
 
   if (loading) {
@@ -318,41 +412,61 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      <Calendar
-        current={selectedDate}
-        onDayPress={handleDayPress}
-        markedDates={markedDates}
-        hideExtraDays={viewMode !== 'monthly'}
-        theme={{
-          backgroundColor: theme.colors.background.primary,
-          calendarBackground: theme.colors.background.primary,
-          textSectionTitleColor: theme.colors.text.secondary,
-          selectedDayBackgroundColor: theme.colors.primary[500],
-          selectedDayTextColor: theme.colors.text.inverse,
-          todayTextColor: theme.colors.primary[500],
-          dayTextColor: theme.colors.text.primary,
-          textDisabledColor: theme.colors.text.disabled,
-          dotColor: theme.colors.primary[500],
-          selectedDotColor: theme.colors.text.inverse,
-          arrowColor: theme.colors.primary[500],
-          monthTextColor: theme.colors.text.primary,
-          indicatorColor: theme.colors.primary[500],
-        }}
-      />
+      <Animated.ScrollView
+        style={styles.scrollContainer}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+        scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
+      >
+        {/* 캘린더 영역 */}
+        <View style={styles.calendarSection}>
+          {viewMode === 'weekly' ? (
+            renderWeekDays()
+          ) : (
+            <Calendar
+              current={selectedDate}
+              onDayPress={handleDayPress}
+              markedDates={markedDates}
+              theme={{
+                backgroundColor: theme.colors.background.primary,
+                calendarBackground: theme.colors.background.primary,
+                textSectionTitleColor: theme.colors.text.secondary,
+                selectedDayBackgroundColor: theme.colors.primary[500],
+                selectedDayTextColor: theme.colors.text.inverse,
+                todayTextColor: theme.colors.primary[500],
+                dayTextColor: theme.colors.text.primary,
+                textDisabledColor: theme.colors.text.disabled,
+                dotColor: theme.colors.primary[500],
+                selectedDotColor: theme.colors.text.inverse,
+                arrowColor: theme.colors.primary[500],
+                monthTextColor: theme.colors.text.primary,
+                indicatorColor: theme.colors.primary[500],
+              }}
+            />
+          )}
+        </View>
 
-      <View style={styles.scheduleList}>
-        <Text style={styles.listTitle}>
-          {format(new Date(selectedDate), 'M월 d일 (EEE)', { locale: ko })} 스케줄
-        </Text>
-        
-        <FlatList
-          data={filteredSchedules}
-          keyExtractor={(item) => item.id}
-          renderItem={renderScheduleItem}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-          }
-          ListEmptyComponent={
+        {/* 스케줄 목록 영역 */}
+        <View style={styles.scheduleList}>
+          <Text style={styles.listTitle}>
+            {viewMode === 'weekly' 
+              ? `${format(new Date(selectedDate), 'M월 d일', { locale: ko })} 주 스케줄`
+              : `${format(new Date(selectedDate), 'M월 d일 (EEE)', { locale: ko })} 스케줄`
+            }
+          </Text>
+          
+          {filteredSchedules.length > 0 ? (
+            filteredSchedules.map((item) => (
+              <View key={item.id}>
+                {renderScheduleItem({ item })}
+              </View>
+            ))
+          ) : (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>스케줄이 없습니다</Text>
               <Button
@@ -361,9 +475,9 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ navigation }) => {
                 style={styles.emptyButton}
               />
             </View>
-          }
-        />
-      </View>
+          )}
+        </View>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 };
@@ -410,8 +524,81 @@ const styles = StyleSheet.create({
     color: theme.colors.text.inverse,
     fontWeight: 'bold',
   },
-  scheduleList: {
+  scrollContainer: {
     flex: 1,
+  },
+  calendarSection: {
+    backgroundColor: theme.colors.background.primary,
+  },
+  weekDaysContainer: {
+    backgroundColor: theme.colors.background.secondary,
+    padding: theme.spacing[3],
+  },
+  weekNavigation: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing[3],
+  },
+  weekNavButton: {
+    padding: theme.spacing[2],
+  },
+  weekNavText: {
+    fontSize: 18,
+    color: theme.colors.primary[500],
+    fontWeight: 'bold',
+  },
+  weekTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.text.primary,
+  },
+  weekDays: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  weekDay: {
+    width: '14.28%', // 100% / 7 = 14.28%
+    alignItems: 'center',
+    paddingVertical: theme.spacing[2],
+    paddingHorizontal: theme.spacing[1],
+    borderRadius: theme.borderRadius.base,
+    position: 'relative',
+    minHeight: 60,
+    justifyContent: 'center',
+  },
+  selectedWeekDay: {
+    backgroundColor: theme.colors.primary[500],
+  },
+  todayWeekDay: {
+    backgroundColor: theme.colors.background.primary,
+    borderWidth: 1,
+    borderColor: theme.colors.primary[500],
+  },
+  weekDayName: {
+    fontSize: 12,
+    color: theme.colors.text.secondary,
+    marginBottom: theme.spacing[1],
+  },
+  weekDayNumber: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.text.primary,
+  },
+  selectedWeekDayText: {
+    color: theme.colors.text.inverse,
+  },
+  todayWeekDayText: {
+    color: theme.colors.primary[500],
+  },
+  weekDayDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    position: 'absolute',
+    bottom: 8,
+  },
+  scheduleList: {
     padding: theme.spacing[4],
   },
   listTitle: {
@@ -507,7 +694,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   emptyContainer: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: theme.spacing[8],
