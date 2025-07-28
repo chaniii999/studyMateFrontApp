@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, Alert, Platform, Vibration, Dimensions, ImageBackground } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import Svg, { Circle } from 'react-native-svg';
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 // import LinearGradient from 'react-native-linear-gradient'; // 임시 비활성화
@@ -228,6 +229,9 @@ const TimerScreen: React.FC = () => {
   const scaleAnimatedValue = useRef(new Animated.Value(1)).current;
   const opacityAnimatedValue = useRef(new Animated.Value(1)).current;
   
+  // 네비게이션 제어
+  const navigation = useNavigation();
+  
   // 각 모드별 시간 누적을 위한 상태
   const [studyStartTime, setStudyStartTime] = useState<Date | null>(null);
   const [restStartTime, setRestStartTime] = useState<Date | null>(null);
@@ -401,7 +405,7 @@ const TimerScreen: React.FC = () => {
     setIsMiniMode(toMini);
     
     if (toMini) {
-      // 미니모드로 전환: 다른 요소들 줄어들면서 소멸
+      // 미니모드로 전환: 다른 요소들 줄어들면서 소멸 + 네비게이션 숨김
       Animated.parallel([
         Animated.timing(scaleAnimatedValue, {
           toValue: 0, // 다른 요소들 줄어들면서 소멸
@@ -416,8 +420,20 @@ const TimerScreen: React.FC = () => {
           useNativeDriver: true,
         }),
       ]).start();
+      
+      // 네비게이션 바 숨기기
+      setTimeout(() => {
+        navigation.setOptions({
+          tabBarStyle: { display: 'none' }
+        });
+      }, 200);
     } else {
-      // 일반모드로 복귀: 다른 요소들 나타나면서 확대
+      // 일반모드로 복귀: 다른 요소들 나타나면서 확대 + 네비게이션 표시
+      // 네비게이션 바 먼저 표시
+      navigation.setOptions({
+        tabBarStyle: { display: 'flex' }
+      });
+      
       Animated.parallel([
         Animated.timing(scaleAnimatedValue, {
           toValue: 1, // 원래 크기로
@@ -805,16 +821,24 @@ const TimerScreen: React.FC = () => {
         height={height}
       />
       
-      {/* 설정 버튼 */}
-      <TouchableOpacity 
-        style={styles.settingsButton} 
-        onPress={handleSettings}
-        activeOpacity={0.7}
-      >
-        <View style={styles.glassButton}>
-          <Text style={styles.settingsIcon}>⚙</Text>
-        </View>
-      </TouchableOpacity>
+            {/* 설정 버튼 */}
+      <Animated.View style={[
+        styles.settingsButton,
+        {
+          opacity: opacityAnimatedValue,
+          transform: [{ scale: scaleAnimatedValue }]
+        }
+      ]}>
+        <TouchableOpacity
+          onPress={handleSettings}
+          activeOpacity={0.7}
+          style={{ width: '100%', height: '100%' }}
+        >
+          <View style={styles.glassButton}>
+            <Text style={styles.settingsIcon}>⚙</Text>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
 
       {/* 알림 토글 버튼 */}
       <TouchableOpacity 
