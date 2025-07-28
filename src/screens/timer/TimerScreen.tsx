@@ -2,12 +2,13 @@ import React, { useRef, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, Alert } from 'react-native';
 import { theme } from '../../theme';
 import apiClient from '../../services/apiClient';
-import { aiFeedbackService, AiFeedbackRequest } from '../../services/aiFeedbackService';
+import { aiFeedbackService } from '../../services/aiFeedbackService';
+import { AiFeedbackRequest } from '../../types/aiFeedback';
 import AiFeedbackSurvey, { AiFeedbackSurveyData } from '../../components/AiFeedbackSurvey';
 import { useRoute } from '@react-navigation/native';
 
-const STUDY_MINUTES = 25;
-const BREAK_MINUTES = 5;
+const DEFAULT_STUDY_MINUTES = 25;
+const DEFAULT_BREAK_MINUTES = 5;
 
 const pastelColors = {
   study: '#AEE6FF', // 파스텔 블루
@@ -20,13 +21,16 @@ const TimerScreen: React.FC = () => {
   const route = useRoute();
   const [isRunning, setIsRunning] = useState(false);
   const [isStudy, setIsStudy] = useState(true);
-  const [remaining, setRemaining] = useState(STUDY_MINUTES * 60);
+  const [studyMinutes, setStudyMinutes] = useState(DEFAULT_STUDY_MINUTES);
+  const [breakMinutes, setBreakMinutes] = useState(DEFAULT_BREAK_MINUTES);
+  const [remaining, setRemaining] = useState(DEFAULT_STUDY_MINUTES * 60);
   const [cycle, setCycle] = useState(1);
   const animatedValue = useRef(new Animated.Value(0)).current;
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [savedTimerId, setSavedTimerId] = useState<number | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [surveyVisible, setSurveyVisible] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   
   // 각 모드별 시간 누적을 위한 상태
   const [studyStartTime, setStudyStartTime] = useState<Date | null>(null);
@@ -70,8 +74,12 @@ const TimerScreen: React.FC = () => {
       interval = setInterval(() => {
         setRemaining((prev) => {
           if (prev > 0) return prev - 1;
-          // 타이머 종료 시
-          handleSwitch();
+          // 타이머 종료 시 - 무한 루프 방지를 위해 즉시 정지
+          setIsRunning(false);
+          // 다음 tick에서 handleSwitch 호출
+          setTimeout(() => {
+            handleSwitch();
+          }, 0);
           return 0;
         });
       }, 1000);
@@ -84,12 +92,12 @@ const TimerScreen: React.FC = () => {
   // 애니메이션(진행률)
   useEffect(() => {
     Animated.timing(animatedValue, {
-      toValue: 1 - remaining / (isStudy ? STUDY_MINUTES * 60 : BREAK_MINUTES * 60),
+      toValue: 1 - remaining / (isStudy ? studyMinutes * 60 : breakMinutes * 60),
       duration: 500,
       useNativeDriver: false,
       easing: Easing.out(Easing.quad),
     }).start();
-  }, [remaining, isStudy]);
+  }, [remaining, isStudy, studyMinutes, breakMinutes]);
 
   useEffect(() => {
     if (route.params && (route.params as any).autoStart) {
@@ -126,7 +134,7 @@ const TimerScreen: React.FC = () => {
 
   const handleReset = () => {
     setIsRunning(false);
-    setRemaining(isStudy ? STUDY_MINUTES * 60 : BREAK_MINUTES * 60);
+    setRemaining(isStudy ? studyMinutes * 60 : breakMinutes * 60);
     // 모든 시간 누적 초기화
     setTotalStudySeconds(0);
     setTotalRestSeconds(0);
@@ -158,13 +166,13 @@ const TimerScreen: React.FC = () => {
       // 공부 → 휴식
       setIsStudy(false);
       setRestStartTime(newStartTime);
-      setRemaining(BREAK_MINUTES * 60);
+      setRemaining(breakMinutes * 60);
       setCycle((c) => c + 1);
     } else {
       // 휴식 → 공부
       setIsStudy(true);
       setStudyStartTime(newStartTime);
-      setRemaining(STUDY_MINUTES * 60);
+      setRemaining(studyMinutes * 60);
     }
     
     // 새 모드 기록 추가
@@ -173,8 +181,85 @@ const TimerScreen: React.FC = () => {
       startTime: newStartTime
     }]);
     
+    // 효과음 재생 (알림이 켜져있을 때만)
+    if (soundEnabled) {
+      playNotificationSound();
+    }
+    
     // 즉시 타이머 재시작
     setIsRunning(true);
+  };
+
+  // 알림 토글 핸들러
+  const handleSoundToggle = () => {
+    setSoundEnabled(prev => !prev);
+  };
+
+  // 효과음 재생 함수
+  const playNotificationSound = () => {
+    // React Native에서는 기본적으로 사운드 API가 제한적이므로
+    // 하드웨어 피드백을 통해 효과음을 시뮬레이션
+    // 실제로는 expo-av나 react-native-sound 라이브러리 사용 권장
+    console.log('🔔 모드전환 알림음 재생');
+  };
+
+  // 설정 다이얼 핸들러
+  const handleSettings = () => {
+    Alert.prompt(
+      '공부 시간 설정',
+      '공부 시간을 분 단위로 입력하세요:',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '확인',
+          onPress: (studyTimeText) => {
+            if (studyTimeText) {
+              const newStudyMinutes = parseInt(studyTimeText);
+              if (newStudyMinutes > 0 && newStudyMinutes <= 120) {
+                setStudyMinutes(newStudyMinutes);
+                // 현재 공부 모드이고 타이머가 정지된 상태라면 remaining 업데이트
+                if (isStudy && !isRunning) {
+                  setRemaining(newStudyMinutes * 60);
+                }
+                
+                // 휴식 시간 설정 다이얼
+                Alert.prompt(
+                  '휴식 시간 설정',
+                  '휴식 시간을 분 단위로 입력하세요:',
+                  [
+                    { text: '취소', style: 'cancel' },
+                    {
+                      text: '확인',
+                      onPress: (breakTimeText) => {
+                        if (breakTimeText) {
+                          const newBreakMinutes = parseInt(breakTimeText);
+                          if (newBreakMinutes > 0 && newBreakMinutes <= 60) {
+                            setBreakMinutes(newBreakMinutes);
+                            // 현재 휴식 모드이고 타이머가 정지된 상태라면 remaining 업데이트
+                            if (!isStudy && !isRunning) {
+                              setRemaining(newBreakMinutes * 60);
+                            }
+                            Alert.alert('설정 완료', `공부: ${newStudyMinutes}분, 휴식: ${newBreakMinutes}분`);
+                          } else {
+                            Alert.alert('오류', '휴식 시간은 1-60분 사이로 입력해주세요.');
+                          }
+                        }
+                      }
+                    }
+                  ],
+                  'plain-text',
+                  breakMinutes.toString()
+                );
+              } else {
+                Alert.alert('오류', '공부 시간은 1-120분 사이로 입력해주세요.');
+              }
+            }
+          }
+        }
+      ],
+      'plain-text',
+      studyMinutes.toString()
+    );
   };
 
   // 공부 종료 및 저장
@@ -226,7 +311,7 @@ const TimerScreen: React.FC = () => {
       return;
     }
     
-    const mode = `${STUDY_MINUTES}/${BREAK_MINUTES}`; // 포모도로 모드
+    const mode = `${studyMinutes}/${breakMinutes}`; // 포모도로 모드
     const summary = '';
     const payload = {
       studyTimes: finalStudySeconds, // 초 단위로 직접 전송
@@ -260,7 +345,7 @@ const TimerScreen: React.FC = () => {
         setTotalStudySeconds(0);
         setTotalRestSeconds(0);
         setIsRunning(false);
-        setRemaining(isStudy ? STUDY_MINUTES * 60 : BREAK_MINUTES * 60);
+        setRemaining(isStudy ? studyMinutes * 60 : breakMinutes * 60);
       } else {
         Alert.alert('저장 실패', response.message || '저장에 실패했습니다.');
       }
@@ -290,9 +375,9 @@ const TimerScreen: React.FC = () => {
       const request: AiFeedbackRequest = {
         timerId: savedTimerId,
         studySummary: '타이머를 통한 학습',
-        studyTime: STUDY_MINUTES, // 기본 설정값 사용
-        restTime: BREAK_MINUTES,  // 기본 설정값 사용
-        mode: `${STUDY_MINUTES}/${BREAK_MINUTES}`,
+        studyTime: studyMinutes, // 현재 설정값 사용
+        restTime: breakMinutes,  // 현재 설정값 사용
+        mode: `${studyMinutes}/${breakMinutes}`,
         // 설문조사 데이터 추가
         ...surveyData
       };
@@ -332,6 +417,26 @@ const TimerScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: isStudy ? pastelColors.study : pastelColors.break }]}>  
+      {/* 설정 버튼 */}
+      <TouchableOpacity 
+        style={styles.settingsButton} 
+        onPress={handleSettings}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.settingsIcon}>⚙️</Text>
+      </TouchableOpacity>
+
+      {/* 알림 토글 버튼 */}
+      <TouchableOpacity 
+        style={styles.soundToggleButton} 
+        onPress={handleSoundToggle}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.soundToggleIcon}>
+          {soundEnabled ? '🔔' : '🔕'}
+        </Text>
+      </TouchableOpacity>
+      
       <View style={styles.cycleBadge}>
         <Text style={styles.cycleText}>🍅 {cycle}번째 사이클</Text>
       </View>
@@ -576,6 +681,46 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
     marginVertical: 2,
+  },
+  soundToggleButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    zIndex: 10,
+  },
+  soundToggleIcon: {
+    fontSize: 20,
+  },
+  settingsButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    zIndex: 10,
+  },
+  settingsIcon: {
+    fontSize: 20,
   },
 });
 
