@@ -238,19 +238,18 @@ const TimerScreen: React.FC = () => {
       const parent = navigation.getParent();
       if (!parent) return;
       
-      // 타이머 탭 진입 시: 야경 테마와 통일된 글래스모피즘 스타일 적용 (아이콘 간격 동일화)
+      // 타이머 탭 진입 시: 야경 테마 글래스모피즘 스타일 (최소 패딩)
       parent.setOptions({
         tabBarStyle: {
           backgroundColor: 'rgba(255, 255, 255, 0.1)', // 반투명 배경
           borderTopWidth: 1,
           borderTopColor: 'rgba(255, 255, 255, 0.2)', // 반투명 테두리
-          borderRadius: 20,
-          // marginHorizontal 제거하여 아이콘 간격을 다른 탭과 동일하게
-          paddingHorizontal: 16, // 내부 패딩으로 시각적 여백 유지
-          marginBottom: Platform.OS === 'ios' ? 10 : 8,
-          paddingBottom: Platform.OS === 'ios' ? 24 : 8,
-          paddingTop: 6,
-          height: Platform.OS === 'ios' ? 85 : 55,
+          borderRadius: 30, // 더 둥근 테두리
+          marginHorizontal: 12, // 좌우 여백 증가
+          marginBottom: Platform.OS === 'ios' ? 30 : 18, // 10px 위로 이동
+          paddingBottom: Platform.OS === 'ios' ? 10 : 6, // 하단 패딩 최소화
+          paddingTop: 4, // 상단 패딩 최소화
+          height: Platform.OS === 'ios' ? 75 : 50, // 높이 더 줄임
           shadowColor: 'rgba(0, 0, 0, 0.3)',
           shadowOffset: { width: 0, height: 8 },
           shadowOpacity: 0.25,
@@ -418,12 +417,12 @@ const TimerScreen: React.FC = () => {
             backgroundColor: 'rgba(255, 255, 255, 0.1)', // 야경 테마 배경
             borderTopWidth: 1,
             borderTopColor: 'rgba(255, 255, 255, 0.2)', // 야경 테마 테두리
-            borderRadius: 20,
-            paddingHorizontal: 16, // 내부 패딩으로 시각적 여백 유지
-            marginBottom: Platform.OS === 'ios' ? 10 - step : 8 - step, // 아래로 이동
-            paddingBottom: Platform.OS === 'ios' ? 24 : 8,
-            paddingTop: 6,
-            height: Platform.OS === 'ios' ? 85 : 55,
+            borderRadius: 30, // 더 둥근 테두리
+            marginHorizontal: 12, // 최소 패딩 설정과 동일
+            marginBottom: Platform.OS === 'ios' ? 15 - step : 18 - step, // 아래로 이동 (10px 위로 이동)
+            paddingBottom: Platform.OS === 'ios' ? 20 : 6,
+            paddingTop: 4,
+            height: Platform.OS === 'ios' ? 75 : 50,
             shadowColor: 'rgba(0, 0, 0, 0.3)', // 야경 테마 그림자
             shadowOffset: { width: 0, height: 8 },
             shadowOpacity: 0.25,
@@ -461,12 +460,12 @@ const TimerScreen: React.FC = () => {
             backgroundColor: 'rgba(255, 255, 255, 0.1)', // 야경 테마 배경
             borderTopWidth: 1,
             borderTopColor: 'rgba(255, 255, 255, 0.2)', // 야경 테마 테두리
-            borderRadius: 20,
-            paddingHorizontal: 16, // 내부 패딩으로 시각적 여백 유지
-            marginBottom: Platform.OS === 'ios' ? 10 - step : 8 - step, // 위로 이동
-            paddingBottom: Platform.OS === 'ios' ? 24 : 8,
-            paddingTop: 6,
-            height: Platform.OS === 'ios' ? 85 : 55,
+            borderRadius: 30, // 더 둥근 테두리
+            marginHorizontal: 12, // 최소 패딩 설정과 동일
+            marginBottom: Platform.OS === 'ios' ? 15 - step : 18 - step, // 위로 이동 (10px 위로 이동)
+            paddingBottom: Platform.OS === 'ios' ? 20 : 6,
+            paddingTop: 4,
+            height: Platform.OS === 'ios' ? 75 : 50,
             shadowColor: 'rgba(0, 0, 0, 0.3)', // 야경 테마 그림자
             shadowOffset: { width: 0, height: 8 },
             shadowOpacity: 0.25,
@@ -486,18 +485,18 @@ const TimerScreen: React.FC = () => {
         if (step > 0) {
           setTimeout(slideUp, 15);
         } else {
-          // 야경 테마 스타일로 복원 (미니모드 해제 후) - 아이콘 간격 동일화
+          // 야경 테마 스타일로 복원 (미니모드 해제 후) - 더 둥근 테두리
           parent.setOptions({
             tabBarStyle: {
               backgroundColor: 'rgba(255, 255, 255, 0.1)',
               borderTopWidth: 1,
               borderTopColor: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: 20,
-              paddingHorizontal: 16, // 내부 패딩으로 시각적 여백 유지
-              marginBottom: Platform.OS === 'ios' ? 10 : 8,
-              paddingBottom: Platform.OS === 'ios' ? 24 : 8,
-              paddingTop: 6,
-              height: Platform.OS === 'ios' ? 85 : 55,
+              borderRadius: 30, // 더 둥근 테두리
+              marginHorizontal: 12, // 최소 패딩 설정과 동일
+              marginBottom: Platform.OS === 'ios' ? 15 : 18, // 10px 위로 이동
+              paddingBottom: Platform.OS === 'ios' ? 20 : 6,
+              paddingTop: 4,
+              height: Platform.OS === 'ios' ? 75 : 50,
               shadowColor: 'rgba(0, 0, 0, 0.3)',
               shadowOffset: { width: 0, height: 8 },
               shadowOpacity: 0.25,
@@ -1106,7 +1105,7 @@ const TimerScreen: React.FC = () => {
                   {formatTime(remaining)}
                 </Text>
                 <Text style={styles.nightStatusText}>
-                  {isStudy ? '집중 중 🌟' : '휴식 중 🌙'}
+                  {isStudy ? '집중 중..' : '휴식 중 🌙'}
                 </Text>
               </View>
             </TouchableOpacity>
