@@ -519,9 +519,24 @@ const TimerScreen: React.FC = () => {
           <Text style={[styles.buttonText, { color: '#6EC1E4' }]}>모드전환</Text>
         </TouchableOpacity>
       </View>
-      <TouchableOpacity style={styles.finishButton} onPress={handleFinishAndSave} activeOpacity={0.85}>
-        <Text style={styles.finishButtonText}>공부 종료</Text>
-      </TouchableOpacity>
+      {/* 공부 종료 버튼 - 조건부 활성화 */}
+      {canFinishStudy() ? (
+        <TouchableOpacity 
+          style={styles.finishButton} 
+          onPress={handleFinishAndSave} 
+          activeOpacity={0.85}
+        >
+          <Text style={styles.finishButtonText}>공부 종료</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity 
+          style={[styles.finishButton, styles.finishButtonDisabled]} 
+          activeOpacity={0.85}
+          disabled={true}
+        >
+          <Text style={[styles.finishButtonText, styles.finishButtonTextDisabled]}>공부 종료</Text>
+        </TouchableOpacity>
+      )}
       
       {/* AI 피드백 버튼 */}
       {savedTimerId && (
@@ -670,6 +685,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     letterSpacing: 1,
+  },
+  finishButtonDisabled: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    opacity: 0.5,
+  },
+  finishButtonTextDisabled: {
+    color: 'rgba(255, 255, 255, 0.6)',
   },
   aiButton: {
     marginTop: 16,
