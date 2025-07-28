@@ -19,10 +19,18 @@ const CARD_HEIGHT = 120;
 const CARD_SPACING = theme.spacing[3];
 const SIDE_PADDING = theme.spacing[4];
 
+interface HomeStats {
+  todayStudyMinutes: number;
+  weekStudyMinutes: number;
+  todayStudySeconds: number;
+  weekStudySeconds: number;
+}
+
 const HomeScreen: React.FC = () => {
   const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
   const [todaySchedules, setTodaySchedules] = useState<ScheduleResponse[]>([]);
   const [todayStudyTime, setTodayStudyTime] = useState(0); // 분 단위
+  const [weekStudyTime, setWeekStudyTime] = useState(0); // 분 단위
   const [loading, setLoading] = useState(true);
 
   // 오늘 날짜
@@ -44,35 +52,61 @@ const HomeScreen: React.FC = () => {
     }
   };
 
-  // 오늘 공부시간 계산
-  const calculateTodayStudyTime = async () => {
+  // 홈 통계 조회 (새로운 API 사용)
+  const loadHomeStats = async () => {
     try {
-      // 오늘 날짜의 타이머 기록 조회
-      const response = await apiClient.get('/timer/history');
+      console.log('홈 통계 API 호출 시작');
+      const response = await apiClient.get('/timer/home-stats');
+      console.log('홈 통계 API 응답:', response);
+      
       if (response.success && response.data) {
-        const todayRecords = response.data.filter((record: any) => {
-          const recordDate = new Date(record.startTime).toISOString().split('T')[0];
-          return recordDate === today;
+        const stats: HomeStats = response.data;
+        setTodayStudyTime(stats.todayStudyMinutes);
+        setWeekStudyTime(stats.weekStudyMinutes);
+        
+        console.log('홈 통계 조회 성공:', {
+          오늘공부분: stats.todayStudyMinutes,
+          이번주공부분: stats.weekStudyMinutes,
+          오늘공부초: stats.todayStudySeconds,
+          이번주공부초: stats.weekStudySeconds
         });
-        
-        // 오늘 기록의 총 공부시간 계산 (초 단위를 분으로 변환)
-        const totalStudySeconds = todayRecords.reduce((total: number, record: any) => {
-          return total + (record.studyTime || 0);
-        }, 0);
-        
-        const totalStudyMinutes = Math.floor(totalStudySeconds / 60);
-        setTodayStudyTime(totalStudyMinutes);
-        
-        console.log('오늘 공부시간 계산:', {
-          오늘기록수: todayRecords.length,
-          총공부초: totalStudySeconds,
-          총공부분: totalStudyMinutes
-        });
+      } else {
+        console.log('홈 통계 API 응답 실패:', response);
       }
     } catch (error) {
-      console.error('오늘 공부시간 계산 에러:', error);
+      console.error('홈 통계 조회 에러:', error);
       // 에러 시 기본값 0으로 설정
       setTodayStudyTime(0);
+      setWeekStudyTime(0);
+      
+      // 기존 방식으로 폴백
+      console.log('기존 방식으로 폴백 시도');
+      try {
+        const response = await apiClient.get('/timer/history');
+        if (response.success && response.data) {
+          const todayRecords = response.data.filter((record: any) => {
+            const recordDate = new Date(record.startTime).toISOString().split('T')[0];
+            return recordDate === today;
+          });
+          
+          const totalStudySeconds = todayRecords.reduce((total: number, record: any) => {
+            console.log('레코드 확인:', record);
+            return total + (record.studyTime || 0);
+          }, 0);
+          
+          const totalStudyMinutes = Math.floor(totalStudySeconds / 60);
+          setTodayStudyTime(totalStudyMinutes);
+          
+          console.log('폴백 방식으로 오늘 공부시간 계산:', {
+            오늘기록수: todayRecords.length,
+            총공부초: totalStudySeconds,
+            총공부분: totalStudyMinutes,
+            개별기록: todayRecords.map((r: any) => ({ id: r.id, studyTime: r.studyTime, startTime: r.startTime }))
+          });
+        }
+      } catch (fallbackError) {
+        console.error('폴백 방식도 실패:', fallbackError);
+      }
     }
   };
 
@@ -97,7 +131,7 @@ const HomeScreen: React.FC = () => {
 
   useEffect(() => {
     loadTodaySchedules();
-    calculateTodayStudyTime();
+    loadHomeStats(); // 기존 calculateTodayStudyTime 대신 새로운 API 사용
   }, []);
 
   return (
@@ -148,7 +182,7 @@ const HomeScreen: React.FC = () => {
         {/* 학습 통계 */}
         <Card style={styles.card} elevation="md" borderRadius="md">
           <Text style={styles.cardTitle}>학습 통계</Text>
-          <Text style={styles.cardContent}>이번 주 학습 시간: 5시간 30분</Text>
+          <Text style={styles.cardContent}>이번 주 학습 시간: {formatStudyTime(weekStudyTime)}</Text>
           <Button 
             title="통계 보기" 
             onPress={() => {
