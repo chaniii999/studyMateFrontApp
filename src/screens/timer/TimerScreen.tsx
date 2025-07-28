@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, Alert, Platform, Vibration } from 'react-native';
 import { theme } from '../../theme';
 import apiClient from '../../services/apiClient';
@@ -78,6 +78,15 @@ const TimerScreen: React.FC = () => {
           setIsRunning(false);
           // 다음 tick에서 handleSwitch 호출
           setTimeout(() => {
+            console.log('타이머 종료 - handleSwitch 호출');
+            console.log('타이머 종료 시점의 soundEnabled:', soundEnabled);
+            // soundEnabled 상태를 직접 확인하여 안전하게 처리
+            if (soundEnabled) {
+              console.log('타이머 종료 시점에서 알림이 켜져있음 - 진동 실행');
+              Vibration.vibrate(200);
+            } else {
+              console.log('타이머 종료 시점에서 알림이 꺼져있음');
+            }
             handleSwitch();
           }, 0);
           return 0;
@@ -144,7 +153,8 @@ const TimerScreen: React.FC = () => {
     setModeHistory([]);
   };
 
-  const handleSwitch = () => {
+  const handleSwitch = useCallback(() => {
+    console.log('handleSwitch 호출됨 - 현재 soundEnabled:', soundEnabled);
     setIsRunning(false);
     
     const now = new Date();
@@ -164,12 +174,14 @@ const TimerScreen: React.FC = () => {
     const newStartTime = new Date();
     if (isStudy) {
       // 공부 → 휴식
+      console.log('공부 → 휴식 모드전환');
       setIsStudy(false);
       setRestStartTime(newStartTime);
       setRemaining(breakMinutes * 60);
       setCycle((c) => c + 1);
     } else {
       // 휴식 → 공부
+      console.log('휴식 → 공부 모드전환');
       setIsStudy(true);
       setStudyStartTime(newStartTime);
       setRemaining(studyMinutes * 60);
@@ -181,16 +193,25 @@ const TimerScreen: React.FC = () => {
       startTime: newStartTime
     }]);
     
-    // 효과음 재생 (알림이 켜져있을 때만)
-    console.log('모드전환 시 soundEnabled 상태:', soundEnabled);
-    if (soundEnabled) {
-      playNotificationSound();
-    } else {
-      console.log('알림이 꺼져있어서 효과음 재생하지 않음');
-    }
+    // 효과음 재생은 이미 타이머 종료 시점에서 처리했으므로 여기서는 로그만 출력
+    console.log('handleSwitch 내부 - 모드전환 완료');
+    console.log('현재 soundEnabled 상태:', soundEnabled);
     
     // 즉시 타이머 재시작
     setIsRunning(true);
+  }, [soundEnabled, isStudy, studyMinutes, breakMinutes]);
+
+  // soundEnabled 상태 변경 감지
+  useEffect(() => {
+    console.log('soundEnabled 상태 변경됨:', soundEnabled);
+  }, [soundEnabled]);
+
+  // 공부 종료 버튼 활성화 조건
+  const canFinishStudy = () => {
+    // 1. 타이머가 시작되었거나 (startTime이 있음)
+    // 2. 모드 히스토리가 있거나 (실제 공부/휴식 기록이 있음)
+    // 3. 현재 타이머가 실행 중이거나
+    return startTime !== null || modeHistory.length > 0 || isRunning;
   };
 
   // 알림 토글 핸들러
