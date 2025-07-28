@@ -1,10 +1,12 @@
-// Common Components
-export * from './common/Button';
-export * from './common/Input';
-export * from './common/Card';
-export * from './common/Modal';
-export * from './common/Loading';
-export * from './common/Error';
+// Common components
+export { default as Button } from './common/Button';
+export { default as Card } from './common/Card';
+export { default as Input } from './common/Input';
+export { default as DreamyNightBackground } from './common/DreamyNightBackground';
+
+// Other components
+export { default as DemoIndicator } from './DemoIndicator';
+export { default as FigmaDesignViewer } from './FigmaDesignViewer';
 
 // Form Components
 export * from './forms/FormField';

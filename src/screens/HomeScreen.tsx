@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, ScrollView, Dimensions, StatusBar } from 'react-native';
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
+import DreamyNightBackground from '../components/common/DreamyNightBackground';
 import { theme } from '../theme';
 import { useNavigation } from '@react-navigation/native';
 import { MainTabParamList } from '../navigation/types';
@@ -135,42 +135,44 @@ const HomeScreen: React.FC = () => {
   }, []);
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.contentContainer}
+    <View style={styles.container}>
+      {/* StatusBar 설정 */}
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      
+      {/* 야경 배경 추가 */}
+      <DreamyNightBackground />
+      
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* 오늘 총 공부시간 */}
+        {/* 오늘의 총 공부시간 */}
         <Card style={styles.studyTimeCard} elevation="lg" borderRadius="lg">
-          <Text style={styles.studyTimeTitle}>오늘 총 공부시간</Text>
+          <Text style={styles.studyTimeTitle}>오늘의 총 공부시간</Text>
           <Text style={styles.studyTimeValue}>{formatStudyTime(todayStudyTime)}</Text>
         </Card>
 
-        {/* 오늘의 할 일 */}
+        {/* 오늘 스케줄 */}
         <Card style={styles.card} elevation="md" borderRadius="md">
-          <Text style={styles.cardTitle}>오늘의 할 일</Text>
+          <Text style={styles.cardTitle}>오늘 스케줄</Text>
           {loading ? (
-            <Text style={styles.cardContent}>스케줄을 불러오는 중...</Text>
+            <Text style={styles.cardContent}>로딩 중...</Text>
           ) : todaySchedules.length > 0 ? (
-            <View style={styles.scheduleList}>
-              {todaySchedules.slice(0, 3).map((schedule) => (
-                <View key={schedule.id} style={styles.scheduleItem}>
-                  <Text style={styles.scheduleTitle}>{schedule.title}</Text>
-                  <Text style={styles.scheduleTime}>
-                    {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
-                  </Text>
-                </View>
-              ))}
-              {todaySchedules.length > 3 && (
-                <Text style={styles.moreSchedules}>+{todaySchedules.length - 3}개 더</Text>
-              )}
-            </View>
+            todaySchedules.slice(0, 3).map((schedule: any) => (
+              <View
+                key={schedule.id}
+                style={styles.scheduleItem}
+              >
+                <Text style={styles.scheduleTitle}>{schedule.title}</Text>
+                <Text style={styles.scheduleTime}>{formatTime(schedule.startTime)}</Text>
+              </View>
+            ))
           ) : (
             <Text style={styles.cardContent}>오늘 예정된 스케줄이 없습니다.</Text>
           )}
           <Button 
-            title="할 일 보기" 
+            title="오늘 스케줄" 
             onPress={() => {
               navigation.navigate('Schedule' as any);
             }} 
@@ -194,17 +196,14 @@ const HomeScreen: React.FC = () => {
           />
         </Card>
 
-        {/* 빠른 시작 */}
+        {/* 빠른 액션 */}
         <Card style={styles.card} elevation="md" borderRadius="md">
           <Text style={styles.cardTitle}>빠른 시작</Text>
-          <Text style={styles.cardContent}>지금 바로 타이머를 시작해 집중 학습을 시작하세요.</Text>
+          <Text style={styles.cardContent}>지금 바로 공부를 시작해보세요!</Text>
           <Button 
             title="타이머 시작" 
             onPress={() => {
-              navigation.navigate('Timer', {
-                screen: 'TimerScreen',
-                params: { autoStart: true },
-              });
+              navigation.navigate('Timer' as any);
             }} 
             size="sm" 
             style={styles.button} 
@@ -212,99 +211,122 @@ const HomeScreen: React.FC = () => {
           />
         </Card>
 
-        {/* 알림 */}
+        {/* 학습 목표 */}
         <Card style={styles.card} elevation="md" borderRadius="md">
-          <Text style={styles.cardTitle}>알림</Text>
-          <Text style={styles.cardContent}>새로운 알림이 없습니다.</Text>
+          <Text style={styles.cardTitle}>학습 목표</Text>
+          <Text style={styles.cardContent}>매일 조금씩 꾸준히 성장하세요.</Text>
+          <Button 
+            title="목표 설정" 
+            onPress={() => {
+              // TODO: 목표 설정 화면으로 이동
+            }} 
+            size="sm" 
+            style={styles.button} 
+            variant="outline" 
+          />
         </Card>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: theme.colors.background.primary,
-  },
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background.primary,
+    backgroundColor: 'transparent', // 배경을 투명하게 하여 DreamyNightBackground가 보이도록
   },
-  contentContainer: {
-    paddingHorizontal: SIDE_PADDING,
-    paddingBottom: 32,
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: SIDE_PADDING,
+    paddingTop: 60, // StatusBar 영역을 고려한 상단 패딩
+    paddingBottom: 120, // 네비게이션 바 영역을 고려한 하단 패딩
   },
   studyTimeCard: {
     marginBottom: CARD_SPACING,
-    minHeight: 100,
+    minHeight: CARD_HEIGHT + 20,
     width: '100%',
     justifyContent: 'center',
-    paddingVertical: theme.spacing[4],
-    paddingHorizontal: theme.spacing[4],
-    backgroundColor: theme.colors.primary[500],
+    paddingVertical: 24,
+    paddingHorizontal: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)', // 반투명 글래스모피즘
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   studyTimeTitle: {
-    fontSize: theme.typography.fontSize.base,
-    fontWeight: '500',
-    color: theme.colors.text.inverse,
-    marginBottom: theme.spacing[2],
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF', // 흰색 텍스트
     textAlign: 'center',
+    marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   studyTimeValue: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: theme.colors.text.inverse,
+    color: '#FFFFFF', // 흰색 텍스트
     textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   card: {
     marginBottom: CARD_SPACING,
     minHeight: CARD_HEIGHT,
     width: '100%',
     justifyContent: 'center',
-    paddingVertical: theme.spacing[4],
-    paddingHorizontal: theme.spacing[4],
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)', // 반투명 글래스모피즘
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   cardTitle: {
-    fontSize: theme.typography.fontSize.lg,
-    fontWeight: '600',
-    color: theme.colors.text.primary,
-    marginBottom: theme.spacing[1],
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#FFFFFF', // 흰색 텍스트
+    marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   cardContent: {
-    fontSize: theme.typography.fontSize.base,
-    color: theme.colors.text.secondary,
-    marginBottom: theme.spacing[2],
-  },
-  scheduleList: {
-    marginBottom: theme.spacing[2],
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)', // 약간 반투명한 흰색 텍스트
+    marginBottom: 12,
+    lineHeight: 20,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
   },
   scheduleItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: theme.spacing[1],
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border.light,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   scheduleTitle: {
-    fontSize: theme.typography.fontSize.base,
-    color: theme.colors.text.primary,
+    fontSize: 14,
+    color: '#FFFFFF', // 흰색 텍스트
     flex: 1,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
   },
   scheduleTime: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.text.secondary,
-  },
-  moreSchedules: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.primary[500],
-    textAlign: 'center',
-    marginTop: theme.spacing[1],
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.8)', // 반투명한 흰색 텍스트
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
   },
   button: {
-    alignSelf: 'flex-start',
-    marginTop: 4,
+    marginTop: 8,
   },
 });
 

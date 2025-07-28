@@ -409,7 +409,7 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ navigation }) => {
           onPress={() => navigation.navigate('ScheduleCreate', { selectedDate })}
         >
           <Text style={styles.addButtonText}>+</Text>
-        </TouchableOpacity>
+      </TouchableOpacity>
       </View>
 
       <Animated.ScrollView
@@ -428,31 +428,31 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ navigation }) => {
           {viewMode === 'weekly' ? (
             renderWeekDays()
           ) : (
-            <Calendar
-              current={selectedDate}
+      <Calendar
+        current={selectedDate}
               onDayPress={handleDayPress}
-              markedDates={markedDates}
-              theme={{
-                backgroundColor: theme.colors.background.primary,
-                calendarBackground: theme.colors.background.primary,
-                textSectionTitleColor: theme.colors.text.secondary,
-                selectedDayBackgroundColor: theme.colors.primary[500],
-                selectedDayTextColor: theme.colors.text.inverse,
-                todayTextColor: theme.colors.primary[500],
-                dayTextColor: theme.colors.text.primary,
-                textDisabledColor: theme.colors.text.disabled,
-                dotColor: theme.colors.primary[500],
-                selectedDotColor: theme.colors.text.inverse,
-                arrowColor: theme.colors.primary[500],
-                monthTextColor: theme.colors.text.primary,
-                indicatorColor: theme.colors.primary[500],
-              }}
-            />
+        markedDates={markedDates}
+        theme={{
+          backgroundColor: theme.colors.background.primary,
+          calendarBackground: theme.colors.background.primary,
+          textSectionTitleColor: theme.colors.text.secondary,
+          selectedDayBackgroundColor: theme.colors.primary[500],
+          selectedDayTextColor: theme.colors.text.inverse,
+          todayTextColor: theme.colors.primary[500],
+          dayTextColor: theme.colors.text.primary,
+          textDisabledColor: theme.colors.text.disabled,
+          dotColor: theme.colors.primary[500],
+          selectedDotColor: theme.colors.text.inverse,
+          arrowColor: theme.colors.primary[500],
+          monthTextColor: theme.colors.text.primary,
+          indicatorColor: theme.colors.primary[500],
+        }}
+      />
           )}
         </View>
 
         {/* 스케줄 목록 영역 */}
-        <View style={styles.scheduleList}>
+      <View style={styles.scheduleList}>
           <Text style={styles.listTitle}>
             {viewMode === 'weekly' 
               ? `${format(new Date(selectedDate), 'M월 d일', { locale: ko })} 주 스케줄`
@@ -476,7 +476,7 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ navigation }) => {
               />
             </View>
           )}
-        </View>
+      </View>
       </Animated.ScrollView>
     </SafeAreaView>
   );

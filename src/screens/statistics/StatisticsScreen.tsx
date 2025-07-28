@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert, StatusBar } from 'react-native';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
+import DreamyNightBackground from '../../components/common/DreamyNightBackground';
 import { theme } from '../../theme';
 import apiClient from '../../services/apiClient';
 import { aiFeedbackService } from '../../services/aiFeedbackService';
@@ -267,11 +267,17 @@ const StatisticsScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+    <View style={styles.safeArea}>
+      {/* StatusBar 설정 */}
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      
+      {/* 야경 배경 추가 */}
+      <DreamyNightBackground />
+      
       <View style={styles.container}>
         <Text style={styles.title}>타이머 기록 통계</Text>
         {loading ? (
-          <ActivityIndicator size="large" color={theme.colors.primary[500]} style={{ marginTop: 40 }} />
+          <ActivityIndicator size="large" color="#FFFFFF" style={{ marginTop: 40 }} />
         ) : records.length === 0 ? (
           <Text style={styles.emptyText}>아직 기록이 없습니다.</Text>
         ) : (
@@ -294,47 +300,55 @@ const StatisticsScreen: React.FC = () => {
         onSubmit={handleSurveySubmit}
         loading={aiLoading !== null}
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAFF',
+    backgroundColor: 'transparent', // 배경을 투명하게 하여 DreamyNightBackground가 보이도록
   },
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFF',
-    // paddingTop: 24, // SafeAreaView가 처리하므로 제거
+    backgroundColor: 'transparent',
+    paddingTop: 60, // StatusBar 영역을 고려한 상단 패딩
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: theme.colors.primary[500],
+    color: '#FFFFFF', // 흰색 텍스트
     marginBottom: 18,
     textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   listContainer: {
     paddingHorizontal: theme.spacing[4],
-    paddingBottom: 32,
+    paddingBottom: 120, // 네비게이션 바 영역을 고려한 하단 패딩
   },
   card: {
     marginBottom: theme.spacing[4],
-    backgroundColor: '#FFF',
+    backgroundColor: 'rgba(255, 255, 255, 0.12)', // 반투명 글래스모피즘
     borderRadius: 18,
-    shadowColor: '#AEE6FF',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    shadowColor: 'rgba(0, 0, 0, 0.3)',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.10,
+    shadowOpacity: 0.25,
     shadowRadius: 10,
-    elevation: 3,
+    elevation: 8,
     padding: theme.spacing[4],
   },
   dateText: {
     fontSize: 16,
-    color: '#7ED957',
+    color: '#A8E6CF', // 밝은 초록색
     fontWeight: '600',
     marginBottom: 6,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   row: {
     flexDirection: 'row',
@@ -343,24 +357,36 @@ const styles = StyleSheet.create({
   },
   modeText: {
     fontSize: 15,
-    color: '#6EC1E4',
+    color: '#A8D8EA', // 밝은 파란색
     fontWeight: '500',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   timeText: {
     fontSize: 15,
-    color: '#FFB6B6',
+    color: '#FFB6B6', // 밝은 분홍색
     fontWeight: '500',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   summaryText: {
     fontSize: 15,
-    color: theme.colors.text.primary,
+    color: '#FFFFFF', // 흰색
     marginTop: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
   },
   emptyText: {
     textAlign: 'center',
-    color: theme.colors.text.secondary,
+    color: 'rgba(255, 255, 255, 0.8)', // 반투명한 흰색
     fontSize: 16,
     marginTop: 40,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   aiSection: {
     marginTop: 16,
