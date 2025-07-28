@@ -50,9 +50,9 @@ const MainTabNavigator: React.FC = () => {
           backgroundColor: theme.colors.background.primary,
           borderTopWidth: 1,
           borderTopColor: theme.colors.border.light,
-          paddingBottom: Platform.OS === 'ios' ? 34 : 10, // iPhone 16 Safe Area
+          paddingBottom: Platform.OS === 'ios' ? 34 : 10,
           paddingTop: 8,
-          height: Platform.OS === 'ios' ? 102 : 68, // iPhone 16 높이 조정
+          height: Platform.OS === 'ios' ? 102 : 68,
           shadowColor: theme.colors.text.primary,
           shadowOffset: {
             width: 0,
@@ -61,6 +61,7 @@ const MainTabNavigator: React.FC = () => {
           shadowOpacity: 0.1,
           shadowRadius: 8,
           elevation: 10,
+          // 기본적으로는 원래 디자인 (화면 테두리까지)
         },
         tabBarLabelStyle: {
           fontSize: 11,

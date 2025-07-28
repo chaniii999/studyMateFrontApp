@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, Alert, Platform, Vibration, Dimensions, ImageBackground } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Svg, { Circle } from 'react-native-svg';
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 // import LinearGradient from 'react-native-linear-gradient'; // 임시 비활성화
@@ -32,10 +32,10 @@ const pastelColors = {
 };
 
 // 야경 배경과 몽환적인 비눗방울 효과 컴포넌트
-const DreamyNightBackground: React.FC<{
-  width: number;
-  height: number;
-}> = ({ width, height }) => {
+const DreamyNightBackground: React.FC = () => {
+  // 고정된 전체 화면 크기 사용
+  const screenWidth = Dimensions.get('window').width;
+  const screenHeight = Dimensions.get('window').height;
   
   // 비눗방울들의 애니메이션 값들
   const bubble1Progress = useSharedValue(0);
@@ -50,13 +50,13 @@ const DreamyNightBackground: React.FC<{
     const translateY = interpolate(
       bubble1Progress.value,
       [0, 1],
-      [height + 100, -200],
+      [screenHeight + 100, -200],
       Extrapolate.CLAMP
     );
     const translateX = interpolate(
       bubble1Progress.value,
       [0, 0.5, 1],
-      [width * 0.1, width * 0.3, width * 0.2],
+      [screenWidth * 0.1, screenWidth * 0.3, screenWidth * 0.2],
       Extrapolate.CLAMP
     );
     const scale = interpolate(
@@ -82,13 +82,13 @@ const DreamyNightBackground: React.FC<{
     const translateY = interpolate(
       bubble2Progress.value,
       [0, 1],
-      [height + 150, -250],
+      [screenHeight + 150, -250],
       Extrapolate.CLAMP
     );
     const translateX = interpolate(
       bubble2Progress.value,
       [0, 0.3, 0.7, 1],
-      [width * 0.8, width * 0.6, width * 0.9, width * 0.7],
+      [screenWidth * 0.8, screenWidth * 0.6, screenWidth * 0.9, screenWidth * 0.7],
       Extrapolate.CLAMP
     );
     const scale = interpolate(
@@ -114,13 +114,13 @@ const DreamyNightBackground: React.FC<{
     const translateY = interpolate(
       bubble3Progress.value,
       [0, 1],
-      [height + 80, -180],
+      [screenHeight + 80, -180],
       Extrapolate.CLAMP
     );
     const translateX = interpolate(
       bubble3Progress.value,
       [0, 0.4, 0.8, 1],
-      [width * 0.5, width * 0.2, width * 0.6, width * 0.4],
+      [screenWidth * 0.5, screenWidth * 0.2, screenWidth * 0.6, screenWidth * 0.4],
       Extrapolate.CLAMP
     );
     const scale = interpolate(
@@ -164,7 +164,7 @@ const DreamyNightBackground: React.FC<{
   }, []);
 
   return (
-    <>
+    <View style={styles.backgroundContainer}>
       {/* 야경 배경 이미지 - 블러 효과 */}
       <ImageBackground
         source={require('../../../assets/images/night_street.jpg')}
@@ -190,18 +190,18 @@ const DreamyNightBackground: React.FC<{
       </Reanimated.View>
 
       {/* 추가 작은 비눗방울들 */}
-      <Reanimated.View style={[styles.bubble, bubbleStyle1, { transform: [{ translateX: width * 0.7 }] }]}>
+      <Reanimated.View style={[styles.bubble, bubbleStyle1, { transform: [{ translateX: screenWidth * 0.7 }] }]}>
         <View style={[styles.bubbleInner, { width: 30, height: 30 }]} />
       </Reanimated.View>
 
-      <Reanimated.View style={[styles.bubble, bubbleStyle2, { transform: [{ translateX: width * 0.3 }] }]}>
+      <Reanimated.View style={[styles.bubble, bubbleStyle2, { transform: [{ translateX: screenWidth * 0.3 }] }]}>
         <View style={[styles.bubbleInner, { width: 35, height: 35 }]} />
       </Reanimated.View>
 
-      <Reanimated.View style={[styles.bubble, bubbleStyle3, { transform: [{ translateX: width * 0.9 }] }]}>
+      <Reanimated.View style={[styles.bubble, bubbleStyle3, { transform: [{ translateX: screenWidth * 0.9 }] }]}>
         <View style={[styles.bubbleInner, { width: 25, height: 25 }]} />
       </Reanimated.View>
-    </>
+    </View>
   );
 };
 
@@ -231,6 +231,58 @@ const TimerScreen: React.FC = () => {
   
   // 네비게이션 제어
   const navigation = useNavigation();
+  
+  // 타이머 탭 진입/나갈 때 네비게이션 바를 플로팅 스타일로 변경
+  useFocusEffect(
+    useCallback(() => {
+      const parent = navigation.getParent();
+      if (!parent) return;
+      
+      // 타이머 탭 진입 시: 플로팅 스타일 적용
+      parent.setOptions({
+        tabBarStyle: {
+          backgroundColor: theme.colors.background.primary,
+          borderTopWidth: 1,
+          borderTopColor: theme.colors.border.light,
+          borderRadius: 20,
+          marginHorizontal: 16,
+          marginBottom: Platform.OS === 'ios' ? 20 : 16,
+          paddingBottom: Platform.OS === 'ios' ? 34 : 10,
+          paddingTop: 8,
+          height: Platform.OS === 'ios' ? 102 : 68,
+          shadowColor: theme.colors.text.primary,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+          elevation: 10,
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+        }
+      });
+      
+      // 타이머 탭에서 나갈 때: 원래 스타일로 복원
+      return () => {
+        parent.setOptions({
+          tabBarStyle: {
+            backgroundColor: theme.colors.background.primary,
+            borderTopWidth: 1,
+            borderTopColor: theme.colors.border.light,
+            paddingBottom: Platform.OS === 'ios' ? 34 : 10,
+            paddingTop: 8,
+            height: Platform.OS === 'ios' ? 102 : 68,
+            shadowColor: theme.colors.text.primary,
+            shadowOffset: { width: 0, height: -2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+            elevation: 10,
+            // position 없음 = 기본 고정
+          }
+        });
+      };
+    }, [navigation])
+  );
   
   // 각 모드별 시간 누적을 위한 상태
   const [studyStartTime, setStudyStartTime] = useState<Date | null>(null);
@@ -332,7 +384,7 @@ const TimerScreen: React.FC = () => {
     }).start();
   }, [remaining, isStudy, studyMinutes, breakMinutes]);
 
-  // 네비게이션 바 스무스 슬라이드 애니메이션
+  // 네비게이션 바 스무스 슬라이드 애니메이션 (플로팅 스타일 적용)
   useEffect(() => {
     const parent = navigation.getParent();
     if (!parent) return;
@@ -341,17 +393,33 @@ const TimerScreen: React.FC = () => {
       // 미니모드: 점진적으로 아래로 슬라이드하며 숨김
       let step = 0;
       const slideDown = () => {
-        step += 10;
+        step += 15;
         parent.setOptions({
           tabBarStyle: {
+            backgroundColor: theme.colors.background.primary,
+            borderTopWidth: 1,
+            borderTopColor: theme.colors.border.light,
+            borderRadius: 20,
+            marginHorizontal: 16,
+            marginBottom: Platform.OS === 'ios' ? 20 - step : 16 - step, // 아래로 이동
+            paddingBottom: Platform.OS === 'ios' ? 34 : 10,
+            paddingTop: 8,
+            height: Platform.OS === 'ios' ? 102 : 68,
+            shadowColor: theme.colors.text.primary,
+            shadowOffset: { width: 0, height: -2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+            elevation: 10,
             position: 'absolute',
-            bottom: -step, // 점점 아래로
-            opacity: Math.max(0, 1 - step / 50), // 점점 투명하게
+            bottom: 0,
+            left: 0,
+            right: 0,
+            opacity: Math.max(0, 1 - step / 100), // 점점 투명하게
           }
         });
         
-        if (step < 50) {
-          setTimeout(slideDown, 20); // 20ms마다 실행
+        if (step < 100) {
+          setTimeout(slideDown, 15); // 15ms마다 실행
         } else {
           // 완전히 숨김
           parent.setOptions({
@@ -362,32 +430,59 @@ const TimerScreen: React.FC = () => {
       
       setTimeout(slideDown, 200); // 다른 애니메이션과 동기화
     } else {
-      // 일반모드: 즉시 표시 후 위로 슬라이드
-      parent.setOptions({
-        tabBarStyle: {
-          position: 'absolute',
-          bottom: -50,
-          opacity: 0,
-        }
-      });
-      
-      let step = 50;
+      // 일반모드: 아래서 위로 슬라이드하며 나타남
+      let step = 100;
       const slideUp = () => {
-        step -= 5;
+        step -= 10;
         parent.setOptions({
           tabBarStyle: {
+            backgroundColor: theme.colors.background.primary,
+            borderTopWidth: 1,
+            borderTopColor: theme.colors.border.light,
+            borderRadius: 20,
+            marginHorizontal: 16,
+            marginBottom: Platform.OS === 'ios' ? 20 - step : 16 - step, // 위로 이동
+            paddingBottom: Platform.OS === 'ios' ? 34 : 10,
+            paddingTop: 8,
+            height: Platform.OS === 'ios' ? 102 : 68,
+            shadowColor: theme.colors.text.primary,
+            shadowOffset: { width: 0, height: -2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 8,
+            elevation: 10,
             position: 'absolute',
-            bottom: -step,
-            opacity: Math.min(1, (50 - step) / 50),
+            bottom: 0,
+            left: 0,
+            right: 0,
+            opacity: Math.min(1, (100 - step) / 100), // 점점 불투명하게
           }
         });
         
         if (step > 0) {
-          setTimeout(slideUp, 20);
+          setTimeout(slideUp, 15);
         } else {
-          // 기본 스타일로 복원
+          // 기본 스타일로 복원 (플로팅 스타일 유지)
           parent.setOptions({
-            tabBarStyle: undefined
+            tabBarStyle: {
+              backgroundColor: theme.colors.background.primary,
+              borderTopWidth: 1,
+              borderTopColor: theme.colors.border.light,
+              borderRadius: 20,
+              marginHorizontal: 16,
+              marginBottom: Platform.OS === 'ios' ? 20 : 16,
+              paddingBottom: Platform.OS === 'ios' ? 34 : 10,
+              paddingTop: 8,
+              height: Platform.OS === 'ios' ? 102 : 68,
+              shadowColor: theme.colors.text.primary,
+              shadowOffset: { width: 0, height: -2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 8,
+              elevation: 10,
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+            }
           });
         }
       };
@@ -866,12 +961,8 @@ const TimerScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {/* 애니메이션 배경 그라데이션 */}
       {/* 야경 배경과 몽환적인 비눗방울 효과 */}
-      <DreamyNightBackground
-        width={width}
-        height={height}
-      />
+      <DreamyNightBackground />
       
             {/* 설정 버튼 */}
       <Animated.View style={[
@@ -1100,6 +1191,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'transparent',
+    position: 'relative',
+    width: '100%',
+    height: '100%',
   },
   // iOS 스타일 배경 그라데이션 스타일
 
@@ -1305,13 +1399,22 @@ const styles = StyleSheet.create({
   blurGradient: {
     flex: 1,
   },
+  // 배경 컨테이너 스타일
+  backgroundContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    height: '100%',
+    zIndex: -1,
+  },
   // 야경 배경과 비눗방울 스타일
   nightBackground: {
     position: 'absolute',
     top: 0,
     left: 0,
-    right: 0,
-    bottom: 0,
+    width: '100%',
+    height: '100%',
     zIndex: -1,
   },
   darkOverlay: {
