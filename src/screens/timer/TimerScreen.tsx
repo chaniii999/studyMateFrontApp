@@ -408,10 +408,16 @@ const TimerScreen: React.FC = () => {
     if (!parent) return;
 
     if (isMiniMode) {
-      // 미니모드: 점진적으로 아래로 슬라이드하며 숨김
+      // 미니모드: 네비게이션 바 자연스럽게 슬라이드하며 숨김 (600ms 동안)
+      const TOTAL_STEPS = 60; // 60 steps
+      const STEP_INTERVAL = 10; // 10ms 간격 (60 * 10 = 600ms)
       let step = 0;
+      
       const slideDown = () => {
-        step += 15;
+        step += 1;
+        const progress = step / TOTAL_STEPS; // 0 ~ 1
+        const easedProgress = 1 - Math.pow(1 - progress, 3); // cubic-out easing
+        
         parent.setOptions({
           tabBarStyle: {
             backgroundColor: 'rgba(255, 255, 255, 0.1)', // 야경 테마 배경
@@ -419,7 +425,7 @@ const TimerScreen: React.FC = () => {
             borderTopColor: 'rgba(255, 255, 255, 0.2)', // 야경 테마 테두리
             borderRadius: 30, // 더 둥근 테두리
             marginHorizontal: 12, // 최소 패딩 설정과 동일
-            marginBottom: Platform.OS === 'ios' ? 15 - step : 18 - step, // 아래로 이동 (10px 위로 이동)
+            marginBottom: Platform.OS === 'ios' ? 30 - (100 * easedProgress) : 18 - (100 * easedProgress), // 자연스럽게 아래로
             paddingBottom: Platform.OS === 'ios' ? 20 : 6,
             paddingTop: 4,
             height: Platform.OS === 'ios' ? 75 : 50,
@@ -432,15 +438,15 @@ const TimerScreen: React.FC = () => {
             bottom: 0,
             left: 0,
             right: 0,
-            opacity: Math.max(0, 1 - step / 100), // 점점 투명하게
+            opacity: Math.max(0, 1 - easedProgress), // 자연스럽게 투명하게
             backdropFilter: 'blur(20px)',
           },
           tabBarActiveTintColor: '#FFFFFF',
           tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.6)',
         });
         
-        if (step < 100) {
-          setTimeout(slideDown, 15); // 15ms마다 실행
+        if (step < TOTAL_STEPS) {
+          setTimeout(slideDown, STEP_INTERVAL);
         } else {
           // 완전히 숨김
           parent.setOptions({
@@ -449,12 +455,18 @@ const TimerScreen: React.FC = () => {
         }
       };
       
-      setTimeout(slideDown, 200); // 다른 애니메이션과 동기화
+      slideDown(); // 즉시 시작
     } else {
-      // 일반모드: 아래서 위로 슬라이드하며 나타남
-      let step = 100;
+      // 일반모드: 네비게이션 바 자연스럽게 위로 슬라이드하며 나타남 (600ms 동안)
+      const TOTAL_STEPS = 60; // 60 steps
+      const STEP_INTERVAL = 10; // 10ms 간격 (60 * 10 = 600ms)
+      let step = 0;
+      
       const slideUp = () => {
-        step -= 10;
+        step += 1;
+        const progress = step / TOTAL_STEPS; // 0 ~ 1
+        const easedProgress = 1 - Math.pow(1 - progress, 3); // cubic-out easing
+        
         parent.setOptions({
           tabBarStyle: {
             backgroundColor: 'rgba(255, 255, 255, 0.1)', // 야경 테마 배경
@@ -462,7 +474,7 @@ const TimerScreen: React.FC = () => {
             borderTopColor: 'rgba(255, 255, 255, 0.2)', // 야경 테마 테두리
             borderRadius: 30, // 더 둥근 테두리
             marginHorizontal: 12, // 최소 패딩 설정과 동일
-            marginBottom: Platform.OS === 'ios' ? 15 - step : 18 - step, // 위로 이동 (10px 위로 이동)
+            marginBottom: Platform.OS === 'ios' ? (30 - 100) + (100 * easedProgress) : (18 - 100) + (100 * easedProgress), // 자연스럽게 위로
             paddingBottom: Platform.OS === 'ios' ? 20 : 6,
             paddingTop: 4,
             height: Platform.OS === 'ios' ? 75 : 50,
@@ -475,17 +487,17 @@ const TimerScreen: React.FC = () => {
             bottom: 0,
             left: 0,
             right: 0,
-            opacity: Math.min(1, (100 - step) / 100), // 점점 불투명하게
+            opacity: Math.min(1, easedProgress), // 자연스럽게 불투명하게
             backdropFilter: 'blur(20px)',
           },
           tabBarActiveTintColor: '#FFFFFF',
           tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.6)',
         });
         
-        if (step > 0) {
-          setTimeout(slideUp, 15);
+        if (step < TOTAL_STEPS) {
+          setTimeout(slideUp, STEP_INTERVAL);
         } else {
-          // 야경 테마 스타일로 복원 (미니모드 해제 후) - 더 둥근 테두리
+          // 야경 테마 스타일로 완전 복원
           parent.setOptions({
             tabBarStyle: {
               backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -493,7 +505,7 @@ const TimerScreen: React.FC = () => {
               borderTopColor: 'rgba(255, 255, 255, 0.2)',
               borderRadius: 30, // 더 둥근 테두리
               marginHorizontal: 12, // 최소 패딩 설정과 동일
-              marginBottom: Platform.OS === 'ios' ? 15 : 18, // 10px 위로 이동
+              marginBottom: Platform.OS === 'ios' ? 30 : 18, // 사용자가 수정한 값 반영
               paddingBottom: Platform.OS === 'ios' ? 20 : 6,
               paddingTop: 4,
               height: Platform.OS === 'ios' ? 75 : 50,
@@ -514,7 +526,7 @@ const TimerScreen: React.FC = () => {
         }
       };
       
-      slideUp();
+      slideUp(); // 즉시 시작
     }
   }, [isMiniMode, navigation]);
 
@@ -590,19 +602,22 @@ const TimerScreen: React.FC = () => {
     const toMini = !isMiniMode;
     setIsMiniMode(toMini);
     
+    // 통일된 애니메이션 시간 설정
+    const ANIMATION_DURATION = 600; // 일관된 애니메이션 시간
+    
     if (toMini) {
       // 미니모드로 전환: 다른 요소들 줄어들면서 소멸 + 네비게이션 숨김
       Animated.parallel([
         Animated.timing(scaleAnimatedValue, {
           toValue: 0, // 다른 요소들 줄어들면서 소멸
-          duration: 400,
-          easing: Easing.out(Easing.back(1.7)),
+          duration: ANIMATION_DURATION,
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
         Animated.timing(opacityAnimatedValue, {
           toValue: 0, // 투명화
-          duration: 300,
-          easing: Easing.out(Easing.quad),
+          duration: ANIMATION_DURATION,
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
       ]).start();
@@ -611,14 +626,14 @@ const TimerScreen: React.FC = () => {
       Animated.parallel([
         Animated.timing(scaleAnimatedValue, {
           toValue: 1, // 원래 크기로
-          duration: 400,
-          easing: Easing.out(Easing.back(1.7)),
+          duration: ANIMATION_DURATION,
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
         Animated.timing(opacityAnimatedValue, {
           toValue: 1, // 다른 요소들 표시
-          duration: 300,
-          easing: Easing.out(Easing.quad),
+          duration: ANIMATION_DURATION,
+          easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
         }),
       ]).start();
