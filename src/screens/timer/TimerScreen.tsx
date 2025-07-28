@@ -238,28 +238,39 @@ const TimerScreen: React.FC = () => {
       const parent = navigation.getParent();
       if (!parent) return;
       
-      // 타이머 탭 진입 시: 플로팅 스타일 적용
+      // 타이머 탭 진입 시: 야경 테마와 통일된 글래스모피즘 스타일 적용 (상하 여백 조정)
       parent.setOptions({
         tabBarStyle: {
-          backgroundColor: theme.colors.background.primary,
+          backgroundColor: 'rgba(255, 255, 255, 0.1)', // 반투명 배경
           borderTopWidth: 1,
-          borderTopColor: theme.colors.border.light,
-          borderRadius: 20,
+          borderTopColor: 'rgba(255, 255, 255, 0.2)', // 반투명 테두리
+          borderRadius: 20, // 모서리 약간 줄임
           marginHorizontal: 16,
-          marginBottom: Platform.OS === 'ios' ? 20 : 16,
-          paddingBottom: Platform.OS === 'ios' ? 34 : 10,
-          paddingTop: 8,
-          height: Platform.OS === 'ios' ? 102 : 68,
-          shadowColor: theme.colors.text.primary,
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 8,
-          elevation: 10,
+          marginBottom: Platform.OS === 'ios' ? 10 : 8, // 하단 여백 줄임
+          paddingBottom: Platform.OS === 'ios' ? 24 : 8, // 내부 패딩 줄임
+          paddingTop: 6, // 상단 패딩 줄임
+          height: Platform.OS === 'ios' ? 85 : 55, // 높이 줄임
+          shadowColor: 'rgba(0, 0, 0, 0.3)', // 더 진한 그림자
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.25,
+          shadowRadius: 16,
+          elevation: 20,
           position: 'absolute',
           bottom: 0,
           left: 0,
           right: 0,
-        }
+          // 글래스모피즘 효과
+          backdropFilter: 'blur(20px)',
+        },
+        tabBarActiveTintColor: '#FFFFFF', // 활성 아이콘 흰색
+        tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.6)', // 비활성 아이콘 반투명 흰색
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+          textShadowColor: 'rgba(0, 0, 0, 0.3)',
+          textShadowOffset: { width: 0, height: 1 },
+          textShadowRadius: 2,
+        },
       });
       
       // 타이머 탭에서 나갈 때: 원래 스타일로 복원
@@ -278,7 +289,14 @@ const TimerScreen: React.FC = () => {
             shadowRadius: 8,
             elevation: 10,
             // position 없음 = 기본 고정
-          }
+          },
+          // 아이콘 색상도 원래대로 복원
+          tabBarActiveTintColor: theme.colors.primary[500],
+          tabBarInactiveTintColor: theme.colors.text.secondary,
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontWeight: '600',
+          },
         });
       };
     }, [navigation])
@@ -384,7 +402,7 @@ const TimerScreen: React.FC = () => {
     }).start();
   }, [remaining, isStudy, studyMinutes, breakMinutes]);
 
-  // 네비게이션 바 스무스 슬라이드 애니메이션 (플로팅 스타일 적용)
+  // 네비게이션 바 스무스 슬라이드 애니메이션 (야경 테마 스타일 적용)
   useEffect(() => {
     const parent = navigation.getParent();
     if (!parent) return;
@@ -396,26 +414,29 @@ const TimerScreen: React.FC = () => {
         step += 15;
         parent.setOptions({
           tabBarStyle: {
-            backgroundColor: theme.colors.background.primary,
+            backgroundColor: 'rgba(255, 255, 255, 0.1)', // 야경 테마 배경
             borderTopWidth: 1,
-            borderTopColor: theme.colors.border.light,
+            borderTopColor: 'rgba(255, 255, 255, 0.2)', // 야경 테마 테두리
             borderRadius: 20,
             marginHorizontal: 16,
-            marginBottom: Platform.OS === 'ios' ? 20 - step : 16 - step, // 아래로 이동
-            paddingBottom: Platform.OS === 'ios' ? 34 : 10,
-            paddingTop: 8,
-            height: Platform.OS === 'ios' ? 102 : 68,
-            shadowColor: theme.colors.text.primary,
-            shadowOffset: { width: 0, height: -2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 10,
+            marginBottom: Platform.OS === 'ios' ? 10 - step : 8 - step, // 아래로 이동 (조정된 여백)
+            paddingBottom: Platform.OS === 'ios' ? 24 : 8,
+            paddingTop: 6,
+            height: Platform.OS === 'ios' ? 85 : 55,
+            shadowColor: 'rgba(0, 0, 0, 0.3)', // 야경 테마 그림자
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.25,
+            shadowRadius: 16,
+            elevation: 20,
             position: 'absolute',
             bottom: 0,
             left: 0,
             right: 0,
             opacity: Math.max(0, 1 - step / 100), // 점점 투명하게
-          }
+            backdropFilter: 'blur(20px)',
+          },
+          tabBarActiveTintColor: '#FFFFFF',
+          tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.6)',
         });
         
         if (step < 100) {
@@ -436,53 +457,59 @@ const TimerScreen: React.FC = () => {
         step -= 10;
         parent.setOptions({
           tabBarStyle: {
-            backgroundColor: theme.colors.background.primary,
+            backgroundColor: 'rgba(255, 255, 255, 0.1)', // 야경 테마 배경
             borderTopWidth: 1,
-            borderTopColor: theme.colors.border.light,
+            borderTopColor: 'rgba(255, 255, 255, 0.2)', // 야경 테마 테두리
             borderRadius: 20,
             marginHorizontal: 16,
-            marginBottom: Platform.OS === 'ios' ? 20 - step : 16 - step, // 위로 이동
-            paddingBottom: Platform.OS === 'ios' ? 34 : 10,
-            paddingTop: 8,
-            height: Platform.OS === 'ios' ? 102 : 68,
-            shadowColor: theme.colors.text.primary,
-            shadowOffset: { width: 0, height: -2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 10,
+            marginBottom: Platform.OS === 'ios' ? 10 - step : 8 - step, // 위로 이동 (조정된 여백)
+            paddingBottom: Platform.OS === 'ios' ? 24 : 8,
+            paddingTop: 6,
+            height: Platform.OS === 'ios' ? 85 : 55,
+            shadowColor: 'rgba(0, 0, 0, 0.3)', // 야경 테마 그림자
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.25,
+            shadowRadius: 16,
+            elevation: 20,
             position: 'absolute',
             bottom: 0,
             left: 0,
             right: 0,
             opacity: Math.min(1, (100 - step) / 100), // 점점 불투명하게
-          }
+            backdropFilter: 'blur(20px)',
+          },
+          tabBarActiveTintColor: '#FFFFFF',
+          tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.6)',
         });
         
         if (step > 0) {
           setTimeout(slideUp, 15);
         } else {
-          // 기본 스타일로 복원 (플로팅 스타일 유지)
+          // 야경 테마 스타일로 복원 (미니모드 해제 후) - 조정된 크기
           parent.setOptions({
             tabBarStyle: {
-              backgroundColor: theme.colors.background.primary,
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
               borderTopWidth: 1,
-              borderTopColor: theme.colors.border.light,
+              borderTopColor: 'rgba(255, 255, 255, 0.2)',
               borderRadius: 20,
               marginHorizontal: 16,
-              marginBottom: Platform.OS === 'ios' ? 20 : 16,
-              paddingBottom: Platform.OS === 'ios' ? 34 : 10,
-              paddingTop: 8,
-              height: Platform.OS === 'ios' ? 102 : 68,
-              shadowColor: theme.colors.text.primary,
-              shadowOffset: { width: 0, height: -2 },
-              shadowOpacity: 0.1,
-              shadowRadius: 8,
-              elevation: 10,
+              marginBottom: Platform.OS === 'ios' ? 10 : 8,
+              paddingBottom: Platform.OS === 'ios' ? 24 : 8,
+              paddingTop: 6,
+              height: Platform.OS === 'ios' ? 85 : 55,
+              shadowColor: 'rgba(0, 0, 0, 0.3)',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.25,
+              shadowRadius: 16,
+              elevation: 20,
               position: 'absolute',
               bottom: 0,
               left: 0,
               right: 0,
-            }
+              backdropFilter: 'blur(20px)',
+            },
+            tabBarActiveTintColor: '#FFFFFF',
+            tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.6)',
           });
         }
       };
