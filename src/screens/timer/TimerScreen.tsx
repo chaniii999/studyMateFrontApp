@@ -1,5 +1,18 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, Alert, Platform, Vibration } from 'react-native';
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, Alert, Platform, Vibration, Dimensions, ImageBackground } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+// import LinearGradient from 'react-native-linear-gradient'; // 임시 비활성화
+import Reanimated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withRepeat, 
+  withTiming, 
+  withSequence,
+  interpolate,
+  Extrapolate,
+  runOnJS
+} from 'react-native-reanimated';
 import { theme } from '../../theme';
 import apiClient from '../../services/apiClient';
 import { aiFeedbackService } from '../../services/aiFeedbackService';
@@ -17,8 +30,183 @@ const pastelColors = {
   shadow: '#E0E7FF',
 };
 
+// 야경 배경과 몽환적인 비눗방울 효과 컴포넌트
+const DreamyNightBackground: React.FC<{
+  width: number;
+  height: number;
+}> = ({ width, height }) => {
+  
+  // 비눗방울들의 애니메이션 값들
+  const bubble1Progress = useSharedValue(0);
+  const bubble2Progress = useSharedValue(0);
+  const bubble3Progress = useSharedValue(0);
+  const bubble4Progress = useSharedValue(0);
+  const bubble5Progress = useSharedValue(0);
+  const bubble6Progress = useSharedValue(0);
+  
+  // 각 비눗방울의 스타일 애니메이션
+  const bubbleStyle1 = useAnimatedStyle(() => {
+    const translateY = interpolate(
+      bubble1Progress.value,
+      [0, 1],
+      [height + 100, -200],
+      Extrapolate.CLAMP
+    );
+    const translateX = interpolate(
+      bubble1Progress.value,
+      [0, 0.5, 1],
+      [width * 0.1, width * 0.3, width * 0.2],
+      Extrapolate.CLAMP
+    );
+    const scale = interpolate(
+      bubble1Progress.value,
+      [0, 0.5, 1],
+      [0.5, 1.2, 0.8],
+      Extrapolate.CLAMP
+    );
+    const opacity = interpolate(
+      bubble1Progress.value,
+      [0, 0.2, 0.8, 1],
+      [0, 0.7, 0.7, 0],
+      Extrapolate.CLAMP
+    );
+
+    return {
+      transform: [{ translateY }, { translateX }, { scale }],
+      opacity,
+    };
+  });
+
+  const bubbleStyle2 = useAnimatedStyle(() => {
+    const translateY = interpolate(
+      bubble2Progress.value,
+      [0, 1],
+      [height + 150, -250],
+      Extrapolate.CLAMP
+    );
+    const translateX = interpolate(
+      bubble2Progress.value,
+      [0, 0.3, 0.7, 1],
+      [width * 0.8, width * 0.6, width * 0.9, width * 0.7],
+      Extrapolate.CLAMP
+    );
+    const scale = interpolate(
+      bubble2Progress.value,
+      [0, 0.6, 1],
+      [0.3, 1.5, 0.6],
+      Extrapolate.CLAMP
+    );
+    const opacity = interpolate(
+      bubble2Progress.value,
+      [0, 0.3, 0.7, 1],
+      [0, 0.8, 0.8, 0],
+      Extrapolate.CLAMP
+    );
+
+    return {
+      transform: [{ translateY }, { translateX }, { scale }],
+      opacity,
+    };
+  });
+
+  const bubbleStyle3 = useAnimatedStyle(() => {
+    const translateY = interpolate(
+      bubble3Progress.value,
+      [0, 1],
+      [height + 80, -180],
+      Extrapolate.CLAMP
+    );
+    const translateX = interpolate(
+      bubble3Progress.value,
+      [0, 0.4, 0.8, 1],
+      [width * 0.5, width * 0.2, width * 0.6, width * 0.4],
+      Extrapolate.CLAMP
+    );
+    const scale = interpolate(
+      bubble3Progress.value,
+      [0, 0.4, 1],
+      [0.4, 1.0, 0.7],
+      Extrapolate.CLAMP
+    );
+    const opacity = interpolate(
+      bubble3Progress.value,
+      [0, 0.2, 0.8, 1],
+      [0, 0.6, 0.6, 0],
+      Extrapolate.CLAMP
+    );
+
+    return {
+      transform: [{ translateY }, { translateX }, { scale }],
+      opacity,
+    };
+  });
+
+  // 애니메이션 시작
+  useEffect(() => {
+    // 서로 다른 타이밍으로 비눗방울들이 떠오르도록 설정
+    const startBubbleAnimation = (progress: Reanimated.SharedValue<number>, delay: number, duration: number) => {
+      setTimeout(() => {
+        progress.value = withRepeat(
+          withTiming(1, { duration }),
+          -1,
+          false
+        );
+      }, delay);
+    };
+
+    startBubbleAnimation(bubble1Progress, 0, 12000);
+    startBubbleAnimation(bubble2Progress, 2000, 15000);
+    startBubbleAnimation(bubble3Progress, 4000, 18000);
+    startBubbleAnimation(bubble4Progress, 6000, 14000);
+    startBubbleAnimation(bubble5Progress, 8000, 16000);
+    startBubbleAnimation(bubble6Progress, 10000, 13000);
+  }, []);
+
+  return (
+    <>
+      {/* 야경 배경 이미지 - 블러 효과 */}
+      <ImageBackground
+        source={require('../../../assets/images/night_street.jpg')}
+        style={styles.nightBackground}
+        blurRadius={8}
+        resizeMode="cover"
+      >
+        {/* 어두운 오버레이 */}
+        <View style={styles.darkOverlay} />
+      </ImageBackground>
+
+      {/* 몽환적인 비눗방울들 */}
+      <Reanimated.View style={[styles.bubble, bubbleStyle1]}>
+        <View style={[styles.bubbleInner, { width: 60, height: 60 }]} />
+      </Reanimated.View>
+
+      <Reanimated.View style={[styles.bubble, bubbleStyle2]}>
+        <View style={[styles.bubbleInner, { width: 80, height: 80 }]} />
+      </Reanimated.View>
+
+      <Reanimated.View style={[styles.bubble, bubbleStyle3]}>
+        <View style={[styles.bubbleInner, { width: 45, height: 45 }]} />
+      </Reanimated.View>
+
+      {/* 추가 작은 비눗방울들 */}
+      <Reanimated.View style={[styles.bubble, bubbleStyle1, { transform: [{ translateX: width * 0.7 }] }]}>
+        <View style={[styles.bubbleInner, { width: 30, height: 30 }]} />
+      </Reanimated.View>
+
+      <Reanimated.View style={[styles.bubble, bubbleStyle2, { transform: [{ translateX: width * 0.3 }] }]}>
+        <View style={[styles.bubbleInner, { width: 35, height: 35 }]} />
+      </Reanimated.View>
+
+      <Reanimated.View style={[styles.bubble, bubbleStyle3, { transform: [{ translateX: width * 0.9 }] }]}>
+        <View style={[styles.bubbleInner, { width: 25, height: 25 }]} />
+      </Reanimated.View>
+    </>
+  );
+};
+
 const TimerScreen: React.FC = () => {
   const route = useRoute();
+  const { width, height } = Dimensions.get('window');
   const [isRunning, setIsRunning] = useState(false);
   const [isStudy, setIsStudy] = useState(true);
   const [studyMinutes, setStudyMinutes] = useState(DEFAULT_STUDY_MINUTES);
@@ -31,6 +219,14 @@ const TimerScreen: React.FC = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [surveyVisible, setSurveyVisible] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  
+  // 게이지바 애니메이션을 위한 Animated Value
+  const gaugeAnimatedValue = useRef(new Animated.Value(0)).current;
+  
+  // 미니모드 상태와 애니메이션
+  const [isMiniMode, setIsMiniMode] = useState(false);
+  const scaleAnimatedValue = useRef(new Animated.Value(1)).current;
+  const opacityAnimatedValue = useRef(new Animated.Value(1)).current;
   
   // 각 모드별 시간 누적을 위한 상태
   const [studyStartTime, setStudyStartTime] = useState<Date | null>(null);
@@ -98,6 +294,30 @@ const TimerScreen: React.FC = () => {
     };
   }, [isRunning, isStudy]);
 
+  // 게이지바 애니메이션 효과 (모드 전환 시)
+  useEffect(() => {
+    if (isRunning) {
+      // 타이머가 실행 중일 때는 실시간 진행률에 맞춰 애니메이션
+      const totalTime = isStudy ? studyMinutes * 60 : breakMinutes * 60;
+      const progressValue = Math.max(0, Math.min(1, (totalTime - remaining) / totalTime));
+      
+      Animated.timing(gaugeAnimatedValue, {
+        toValue: progressValue,
+        duration: 300, // 부드러운 전환
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: false,
+      }).start();
+    } else {
+      // 타이머가 정지되었을 때는 0으로 리셋
+      Animated.timing(gaugeAnimatedValue, {
+        toValue: 0,
+        duration: 500,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }).start();
+    }
+  }, [isRunning, isStudy, studyMinutes, breakMinutes, remaining]);
+
   // 애니메이션(진행률)
   useEffect(() => {
     Animated.timing(animatedValue, {
@@ -153,9 +373,74 @@ const TimerScreen: React.FC = () => {
     setModeHistory([]);
   };
 
+  // 모드 전환 시 게이지바를 0으로 리셋 후 다시 시작
+  const resetGaugeAnimation = useCallback(() => {
+    Animated.sequence([
+      // 먼저 0으로 부드럽게 되돌리기
+      Animated.timing(gaugeAnimatedValue, {
+        toValue: 0,
+        duration: 600,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: false,
+      }),
+      // 잠시 멈춤
+      Animated.delay(200),
+      // 새로운 진행률로 시작
+      Animated.timing(gaugeAnimatedValue, {
+        toValue: 0, // 새로 시작하므로 0에서 시작
+        duration: 200,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: false,
+      }),
+    ]).start();
+  }, []);
+
+  // 미니모드 토글 함수
+  const toggleMiniMode = useCallback(() => {
+    const toMini = !isMiniMode;
+    setIsMiniMode(toMini);
+    
+    if (toMini) {
+      // 미니모드로 전환: 다른 요소들 줄어들면서 소멸
+      Animated.parallel([
+        Animated.timing(scaleAnimatedValue, {
+          toValue: 0, // 다른 요소들 줄어들면서 소멸
+          duration: 400,
+          easing: Easing.out(Easing.back(1.7)),
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnimatedValue, {
+          toValue: 0, // 투명화
+          duration: 300,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      // 일반모드로 복귀: 다른 요소들 나타나면서 확대
+      Animated.parallel([
+        Animated.timing(scaleAnimatedValue, {
+          toValue: 1, // 원래 크기로
+          duration: 400,
+          easing: Easing.out(Easing.back(1.7)),
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnimatedValue, {
+          toValue: 1, // 다른 요소들 표시
+          duration: 300,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [isMiniMode]);
+
   const handleSwitch = useCallback(() => {
     console.log('handleSwitch 호출됨 - 현재 soundEnabled:', soundEnabled);
     setIsRunning(false);
+    
+    // 게이지바 리셋 애니메이션 시작
+    resetGaugeAnimation();
     
     const now = new Date();
     
@@ -205,6 +490,62 @@ const TimerScreen: React.FC = () => {
   useEffect(() => {
     console.log('soundEnabled 상태 변경됨:', soundEnabled);
   }, [soundEnabled]);
+
+  // iOS 스타일 배경 그라데이션 애니메이션 (Reanimated 사용)
+  const gradientProgress = useSharedValue(0);
+  const waveProgress = useSharedValue(0);
+  const rotationProgress = useSharedValue(0);
+  const scaleProgress = useSharedValue(0);
+  const blurProgress = useSharedValue(0);
+
+  // 컬러풀한 그라데이션 색상들
+  const gradientColors = useMemo(() => [
+    ['#FF6B6B', '#4ECDC4'], // 빨강-청록
+    ['#A8E6CF', '#DCEDC8'], // 연한 초록-연한 노랑
+    ['#FFD93D', '#FF6B6B'], // 노랑-빨강
+    ['#6C5CE7', '#A29BFE'], // 보라-연한 보라
+    ['#FD79A8', '#FDCB6E'], // 분홍-주황
+    ['#00B894', '#00CEC9'], // 초록-청록
+  ], []);
+
+  // 현재 그라데이션 색상 (모드에 따라 변경)
+  const currentGradient = useMemo(() => {
+    const index = isStudy ? 0 : 1;
+    return gradientColors[index];
+  }, [isStudy, gradientColors]);
+
+  useEffect(() => {
+    // 무한 루프 애니메이션 시작
+    gradientProgress.value = withRepeat(
+      withTiming(1, { duration: 15000 }),
+      -1,
+      false
+    );
+
+    waveProgress.value = withRepeat(
+      withTiming(1, { duration: 20000 }),
+      -1,
+      false
+    );
+
+    rotationProgress.value = withRepeat(
+      withTiming(1, { duration: 30000 }),
+      -1,
+      false
+    );
+
+    scaleProgress.value = withRepeat(
+      withTiming(1, { duration: 12000 }),
+      -1,
+      false
+    );
+
+    blurProgress.value = withRepeat(
+      withTiming(1, { duration: 8000 }),
+      -1,
+      false
+    );
+  }, []);
 
   // 공부 종료 버튼 활성화 조건
   const canFinishStudy = () => {
@@ -437,23 +778,42 @@ const TimerScreen: React.FC = () => {
     }
   };
 
-  // 원형 타이머 스타일
-  const circleSize = 260;
-  const strokeWidth = 18;
-  const progress = animatedValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
+  // 원형 타이머 스타일 (크기 고정)
+  const circleSize = 270;
+  const strokeWidth = 8;
+  const radius = (circleSize - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  
+  // SVG stroke-dasharray를 위한 계산
+  const strokeDasharray = circumference;
+  
+  // 애니메이션된 strokeDashoffset 계산
+  const animatedStrokeDashoffset = useMemo(() => {
+    return gaugeAnimatedValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: [circumference, 0], // 0%에서 100%로 채워짐
+      extrapolate: 'clamp',
+    });
+  }, [circumference]);
 
   return (
-    <View style={[styles.container, { backgroundColor: isStudy ? pastelColors.study : pastelColors.break }]}>  
+    <View style={styles.container}>
+      {/* 애니메이션 배경 그라데이션 */}
+      {/* 야경 배경과 몽환적인 비눗방울 효과 */}
+      <DreamyNightBackground
+        width={width}
+        height={height}
+      />
+      
       {/* 설정 버튼 */}
       <TouchableOpacity 
         style={styles.settingsButton} 
         onPress={handleSettings}
         activeOpacity={0.7}
       >
-        <Text style={styles.settingsIcon}>⚙️</Text>
+        <View style={styles.glassButton}>
+          <Text style={styles.settingsIcon}>⚙</Text>
+        </View>
       </TouchableOpacity>
 
       {/* 알림 토글 버튼 */}
@@ -462,94 +822,189 @@ const TimerScreen: React.FC = () => {
         onPress={handleSoundToggle}
         activeOpacity={0.7}
       >
-        <Text style={styles.soundToggleIcon}>
-          {soundEnabled ? '🔔' : '🔕'}
-        </Text>
+        <View style={styles.glassButton}>
+          <Text style={styles.soundToggleIcon}>
+            {soundEnabled ? '♫' : '♪'}
+          </Text>
+        </View>
       </TouchableOpacity>
       
-      <View style={styles.cycleBadge}>
-        <Text style={styles.cycleText}>🍅 {cycle}번째 사이클</Text>
-      </View>
+              <Animated.View 
+          style={[
+            styles.nightCycleBadge,
+            { 
+              opacity: opacityAnimatedValue,
+              transform: [{ scale: scaleAnimatedValue }]
+            }
+          ]}
+        >
+        <Text style={styles.nightCycleText}>{cycle}번째 사이클</Text>
+      </Animated.View>
       
-      {/* 누적 시간 표시 */}
-      {modeHistory.length > 0 && (
-        <View style={styles.accumulatedTimeContainer}>
-          <Text style={styles.accumulatedTimeText}>
-            📚 누적 공부: {formatTime(totalStudySeconds)}
-          </Text>
-          <Text style={styles.accumulatedTimeText}>
-            ☕ 누적 휴식: {formatTime(totalRestSeconds)}
-          </Text>
-          <Text style={styles.accumulatedTimeText}>
-            🔄 모드 전환: {modeHistory.length}회
-          </Text>
-        </View>
-      )}
-      <View style={styles.timerWrapper}>
-        <View style={styles.shadowCircle} />
-        <Animated.View style={[styles.progressCircle, {
-          transform: [{ rotate: progress }],
-          borderColor: isStudy ? '#6EC1E4' : '#7ED957',
-        }]} />
-        <View style={styles.innerCircle}>
-          <Text style={styles.timeText}>{formatTime(remaining)}</Text>
-          <Text style={styles.statusText}>{isStudy ? '집중 중 😃' : '휴식 중 💤'}</Text>
-        </View>
-      </View>
-      <View style={styles.buttonRow}>
+              {/* 누적 시간 표시 */}
+        {modeHistory.length > 0 && (
+          <Animated.View 
+            style={[
+              styles.nightAccumulatedTimeContainer,
+              { 
+                opacity: opacityAnimatedValue,
+                transform: [{ scale: scaleAnimatedValue }]
+              }
+            ]}
+          >
+            <View style={styles.timeStatRow}>
+              <Text style={styles.nightAccumulatedTimeText}>
+                누적 공부: {formatTime(totalStudySeconds)}
+              </Text>
+            </View>
+            <View style={styles.timeStatRow}>
+              <Text style={styles.nightAccumulatedTimeText}>
+                누적 휴식: {formatTime(totalRestSeconds)}
+              </Text>
+            </View>
+
+          </Animated.View>
+        )}
+              {/* 타이머 영역은 고정 (애니메이션 없음) */}
+          <View style={styles.nightTimerWrapper}>
+                        <TouchableOpacity
+              onPress={toggleMiniMode}
+              activeOpacity={0.8}
+              style={{ alignItems: 'center', justifyContent: 'center' }}
+            >
+              {/* 타이머 동그란 영역은 항상 표시 */}
+              <View style={styles.nightShadowCircle} />
+              
+              {/* SVG 원형 진행바 */}
+              <Svg
+                width={circleSize}
+                height={circleSize}
+                style={styles.svgContainer}
+              >
+                {/* 배경 원 */}
+                <Circle
+                  cx={circleSize / 2}
+                  cy={circleSize / 2}
+                  r={radius}
+                  stroke="rgba(255, 255, 255, 0.1)"
+                  strokeWidth={strokeWidth}
+                  fill="transparent"
+                />
+                
+                {/* 진행 상황 원 */}
+                <AnimatedCircle
+                  cx={circleSize / 2}
+                  cy={circleSize / 2}
+                  r={radius}
+                  stroke={isStudy ? '#A8D8EA' : '#FFD93D'}
+                  strokeWidth={strokeWidth}
+                  fill="transparent"
+                  strokeDasharray={strokeDasharray}
+                  strokeDashoffset={animatedStrokeDashoffset}
+                  strokeLinecap="round"
+                  transform={`rotate(-90 ${circleSize / 2} ${circleSize / 2})`}
+                />
+              </Svg>
+              
+              <View style={styles.nightInnerCircle}>
+                <Text style={styles.nightTimeText}>
+                  {formatTime(remaining)}
+                </Text>
+                <Text style={styles.nightStatusText}>
+                  {isStudy ? '집중 중 🌟' : '휴식 중 🌙'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+              <Animated.View 
+          style={[
+            styles.nightButtonRow,
+            { 
+              opacity: opacityAnimatedValue,
+              transform: [{ scale: scaleAnimatedValue }]
+            }
+          ]}
+        >
         <TouchableOpacity
-          style={[styles.roundButton, { backgroundColor: pastelColors.button }]}
+          style={styles.nightButton}
           onPress={handleStartPause}
           activeOpacity={0.8}
         >
-          <Text style={styles.buttonText}>{isRunning ? '일시정지' : '시작'}</Text>
+          <View style={styles.nightButtonInner}>
+            <Text style={styles.nightButtonText}>{isRunning ? '일시정지' : '시작'}</Text>
+          </View>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.roundButton, { backgroundColor: '#FFF6E0' }]}
+          style={styles.nightButton}
           onPress={handleReset}
           activeOpacity={0.8}
         >
-          <Text style={[styles.buttonText, { color: '#FFB6B6' }]}>리셋</Text>
+          <View style={styles.nightButtonInner}>
+            <Text style={styles.nightButtonText}>리셋</Text>
+          </View>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.roundButton, { backgroundColor: '#E0F7FA' }]}
+          style={styles.nightButton}
           onPress={handleSwitch}
           activeOpacity={0.8}
         >
-          <Text style={[styles.buttonText, { color: '#6EC1E4' }]}>모드전환</Text>
+          <View style={styles.nightButtonInner}>
+            <Text style={styles.nightButtonText}>모드전환</Text>
+          </View>
         </TouchableOpacity>
-      </View>
-      {/* 공부 종료 버튼 - 조건부 활성화 */}
+        </Animated.View>
+            {/* 공부 종료 버튼 - 조건부 활성화 */}
       {canFinishStudy() ? (
-        <TouchableOpacity 
-          style={styles.finishButton} 
-          onPress={handleFinishAndSave} 
-          activeOpacity={0.85}
-        >
-          <Text style={styles.finishButtonText}>공부 종료</Text>
-        </TouchableOpacity>
+        <Animated.View style={{ 
+          opacity: opacityAnimatedValue,
+          transform: [{ scale: scaleAnimatedValue }]
+        }}>
+          <TouchableOpacity 
+            style={styles.nightFinishButton} 
+            onPress={handleFinishAndSave} 
+            activeOpacity={0.85}
+          >
+            <View style={styles.nightFinishButtonInner}>
+              <Text style={styles.nightFinishButtonText}>공부 종료</Text>
+            </View>
+          </TouchableOpacity>
+        </Animated.View>
       ) : (
-        <TouchableOpacity 
-          style={[styles.finishButton, styles.finishButtonDisabled]} 
-          activeOpacity={0.85}
-          disabled={true}
-        >
-          <Text style={[styles.finishButtonText, styles.finishButtonTextDisabled]}>공부 종료</Text>
-        </TouchableOpacity>
+        <Animated.View style={{ 
+          opacity: opacityAnimatedValue,
+          transform: [{ scale: scaleAnimatedValue }]
+        }}>
+          <TouchableOpacity 
+            style={[styles.nightFinishButton, styles.nightFinishButtonDisabled]}
+            activeOpacity={0.85}
+            disabled={true}
+          >
+            <View style={styles.nightFinishButtonInner}>
+              <Text style={[styles.nightFinishButtonText, styles.nightFinishButtonTextDisabled]}>공부 종료</Text>
+            </View>
+          </TouchableOpacity>
+        </Animated.View>
       )}
       
-      {/* AI 피드백 버튼 */}
+            {/* AI 피드백 버튼 */}
       {savedTimerId && (
-        <TouchableOpacity 
-          style={[styles.aiButton, aiLoading && styles.aiButtonDisabled]} 
-          onPress={handleAiFeedback} 
-          activeOpacity={0.85}
-          disabled={aiLoading}
-        >
-          <Text style={styles.aiButtonText}>
-            {aiLoading ? '🤖 AI 분석 중...' : '🤖 AI 피드백 받기'}
-          </Text>
-        </TouchableOpacity>
+        <Animated.View style={{ 
+          opacity: opacityAnimatedValue,
+          transform: [{ scale: scaleAnimatedValue }]
+        }}>
+          <TouchableOpacity
+            style={[styles.nightAiButton, aiLoading && styles.nightAiButtonDisabled]}
+            onPress={handleAiFeedback}
+            activeOpacity={0.85}
+            disabled={aiLoading}
+          >
+            <View style={styles.nightAiButtonInner}>
+              <Text style={styles.nightAiButtonText}>
+                {aiLoading ? 'AI 분석 중...' : 'AI 피드백 받기'}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </Animated.View>
       )}
 
       {/* AI 피드백 설문조사 모달 */}
@@ -568,7 +1023,10 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'transparent',
   },
+  // iOS 스타일 배경 그라데이션 스타일
+
   cycleBadge: {
     marginTop: 32,
     marginBottom: 16,
@@ -738,41 +1196,314 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 50,
     right: 20,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
     zIndex: 10,
   },
   soundToggleIcon: {
-    fontSize: 20,
+    fontSize: 22,
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   settingsButton: {
     position: 'absolute',
     top: 50,
     left: 20,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
     zIndex: 10,
   },
   settingsIcon: {
-    fontSize: 20,
+    fontSize: 22,
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  blurContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: -1,
+  },
+  blurGradient: {
+    flex: 1,
+  },
+  // 야경 배경과 비눗방울 스타일
+  nightBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: -1,
+  },
+  darkOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+  },
+  bubble: {
+    position: 'absolute',
+    zIndex: 0,
+  },
+  bubbleInner: {
+    borderRadius: 1000,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    shadowColor: '#fff',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  // 야경 분위기 스타일들
+  glassButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 10,
+    // 글래스모핑 효과를 위한 블러 백그라운드
+    backdropFilter: 'blur(20px)',
+  },
+  nightCycleBadge: {
+    marginTop: 20,
+    marginBottom: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 25,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 10,
+  },
+  nightCycleText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  nightAccumulatedTimeContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 30,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  timeStatRow: {
+    marginVertical: 4,
+  },
+  nightAccumulatedTimeText: {
+    fontSize: 14,
+    color: '#E8F4FD',
+    textAlign: 'center',
+    fontWeight: '500',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  nightTimerWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 40,
+    position: 'relative',
+  },
+  nightShadowCircle: {
+    position: 'absolute',
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
+    elevation: 20,
+  },
+  svgContainer: {
+    position: 'absolute',
+  },
+  nightInnerCircle: {
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+    elevation: 15,
+  },
+  nightTimeText: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  nightStatusText: {
+    fontSize: 16,
+    color: '#B8E6B8',
+    fontWeight: '500',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  nightButtonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginBottom: 30,
+    paddingHorizontal: 20,
+  },
+  nightButton: {
+    flex: 1,
+    marginHorizontal: 8,
+  },
+  nightButtonInner: {
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderRadius: 25,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 8,
+  },
+  nightButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  nightFinishButton: {
+    marginBottom: 15,
+    marginHorizontal: 30,
+  },
+  nightFinishButtonInner: {
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    borderRadius: 30,
+    paddingVertical: 18,
+    paddingHorizontal: 30,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 215, 0, 0.4)',
+    shadowColor: '#FFD700',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 12,
+  },
+  nightFinishButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  nightFinishButtonDisabled: {
+    opacity: 0.3,
+  },
+  nightFinishButtonTextDisabled: {
+    color: 'rgba(255, 255, 255, 0.5)',
+  },
+  nightAiButton: {
+    marginHorizontal: 30,
+  },
+  nightAiButtonInner: {
+    backgroundColor: 'rgba(168, 216, 234, 0.15)',
+    borderRadius: 25,
+    paddingVertical: 15,
+    paddingHorizontal: 25,
+    borderWidth: 1,
+    borderColor: 'rgba(168, 216, 234, 0.3)',
+    shadowColor: '#A8D8EA',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  nightAiButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  nightAiButtonDisabled: {
+    opacity: 0.6,
+  },
+  mainGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: -1,
+  },
+  gradientFill: {
+    flex: 1,
+  },
+  waveGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: -1,
+  },
+  rotationGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: -1,
+  },
+  blurOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: -1,
   },
 });
 
