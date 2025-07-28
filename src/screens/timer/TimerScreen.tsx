@@ -332,6 +332,70 @@ const TimerScreen: React.FC = () => {
     }).start();
   }, [remaining, isStudy, studyMinutes, breakMinutes]);
 
+  // 네비게이션 바 스무스 슬라이드 애니메이션
+  useEffect(() => {
+    const parent = navigation.getParent();
+    if (!parent) return;
+
+    if (isMiniMode) {
+      // 미니모드: 점진적으로 아래로 슬라이드하며 숨김
+      let step = 0;
+      const slideDown = () => {
+        step += 10;
+        parent.setOptions({
+          tabBarStyle: {
+            position: 'absolute',
+            bottom: -step, // 점점 아래로
+            opacity: Math.max(0, 1 - step / 50), // 점점 투명하게
+          }
+        });
+        
+        if (step < 50) {
+          setTimeout(slideDown, 20); // 20ms마다 실행
+        } else {
+          // 완전히 숨김
+          parent.setOptions({
+            tabBarStyle: { display: 'none' }
+          });
+        }
+      };
+      
+      setTimeout(slideDown, 200); // 다른 애니메이션과 동기화
+    } else {
+      // 일반모드: 즉시 표시 후 위로 슬라이드
+      parent.setOptions({
+        tabBarStyle: {
+          position: 'absolute',
+          bottom: -50,
+          opacity: 0,
+        }
+      });
+      
+      let step = 50;
+      const slideUp = () => {
+        step -= 5;
+        parent.setOptions({
+          tabBarStyle: {
+            position: 'absolute',
+            bottom: -step,
+            opacity: Math.min(1, (50 - step) / 50),
+          }
+        });
+        
+        if (step > 0) {
+          setTimeout(slideUp, 20);
+        } else {
+          // 기본 스타일로 복원
+          parent.setOptions({
+            tabBarStyle: undefined
+          });
+        }
+      };
+      
+      slideUp();
+    }
+  }, [isMiniMode, navigation]);
+
   useEffect(() => {
     if (route.params && (route.params as any).autoStart) {
       if (!isRunning) {
@@ -420,20 +484,8 @@ const TimerScreen: React.FC = () => {
           useNativeDriver: true,
         }),
       ]).start();
-      
-      // 네비게이션 바 숨기기
-      setTimeout(() => {
-        navigation.setOptions({
-          tabBarStyle: { display: 'none' }
-        });
-      }, 200);
     } else {
-      // 일반모드로 복귀: 다른 요소들 나타나면서 확대 + 네비게이션 표시
-      // 네비게이션 바 먼저 표시
-      navigation.setOptions({
-        tabBarStyle: { display: 'flex' }
-      });
-      
+      // 일반모드로 복귀: 다른 요소들 나타나면서 확대
       Animated.parallel([
         Animated.timing(scaleAnimatedValue, {
           toValue: 1, // 원래 크기로
