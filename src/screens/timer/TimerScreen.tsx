@@ -238,19 +238,20 @@ const TimerScreen: React.FC = () => {
       const parent = navigation.getParent();
       if (!parent) return;
       
-      // 타이머 탭 진입 시: 야경 테마와 통일된 글래스모피즘 스타일 적용 (상하 여백 조정)
+      // 타이머 탭 진입 시: 야경 테마와 통일된 글래스모피즘 스타일 적용 (아이콘 간격 동일화)
       parent.setOptions({
         tabBarStyle: {
           backgroundColor: 'rgba(255, 255, 255, 0.1)', // 반투명 배경
           borderTopWidth: 1,
           borderTopColor: 'rgba(255, 255, 255, 0.2)', // 반투명 테두리
-          borderRadius: 20, // 모서리 약간 줄임
-          marginHorizontal: 16,
-          marginBottom: Platform.OS === 'ios' ? 10 : 8, // 하단 여백 줄임
-          paddingBottom: Platform.OS === 'ios' ? 24 : 8, // 내부 패딩 줄임
-          paddingTop: 6, // 상단 패딩 줄임
-          height: Platform.OS === 'ios' ? 85 : 55, // 높이 줄임
-          shadowColor: 'rgba(0, 0, 0, 0.3)', // 더 진한 그림자
+          borderRadius: 20,
+          // marginHorizontal 제거하여 아이콘 간격을 다른 탭과 동일하게
+          paddingHorizontal: 16, // 내부 패딩으로 시각적 여백 유지
+          marginBottom: Platform.OS === 'ios' ? 10 : 8,
+          paddingBottom: Platform.OS === 'ios' ? 24 : 8,
+          paddingTop: 6,
+          height: Platform.OS === 'ios' ? 85 : 55,
+          shadowColor: 'rgba(0, 0, 0, 0.3)',
           shadowOffset: { width: 0, height: 8 },
           shadowOpacity: 0.25,
           shadowRadius: 16,
@@ -418,8 +419,8 @@ const TimerScreen: React.FC = () => {
             borderTopWidth: 1,
             borderTopColor: 'rgba(255, 255, 255, 0.2)', // 야경 테마 테두리
             borderRadius: 20,
-            marginHorizontal: 16,
-            marginBottom: Platform.OS === 'ios' ? 10 - step : 8 - step, // 아래로 이동 (조정된 여백)
+            paddingHorizontal: 16, // 내부 패딩으로 시각적 여백 유지
+            marginBottom: Platform.OS === 'ios' ? 10 - step : 8 - step, // 아래로 이동
             paddingBottom: Platform.OS === 'ios' ? 24 : 8,
             paddingTop: 6,
             height: Platform.OS === 'ios' ? 85 : 55,
@@ -461,8 +462,8 @@ const TimerScreen: React.FC = () => {
             borderTopWidth: 1,
             borderTopColor: 'rgba(255, 255, 255, 0.2)', // 야경 테마 테두리
             borderRadius: 20,
-            marginHorizontal: 16,
-            marginBottom: Platform.OS === 'ios' ? 10 - step : 8 - step, // 위로 이동 (조정된 여백)
+            paddingHorizontal: 16, // 내부 패딩으로 시각적 여백 유지
+            marginBottom: Platform.OS === 'ios' ? 10 - step : 8 - step, // 위로 이동
             paddingBottom: Platform.OS === 'ios' ? 24 : 8,
             paddingTop: 6,
             height: Platform.OS === 'ios' ? 85 : 55,
@@ -485,14 +486,14 @@ const TimerScreen: React.FC = () => {
         if (step > 0) {
           setTimeout(slideUp, 15);
         } else {
-          // 야경 테마 스타일로 복원 (미니모드 해제 후) - 조정된 크기
+          // 야경 테마 스타일로 복원 (미니모드 해제 후) - 아이콘 간격 동일화
           parent.setOptions({
             tabBarStyle: {
               backgroundColor: 'rgba(255, 255, 255, 0.1)',
               borderTopWidth: 1,
               borderTopColor: 'rgba(255, 255, 255, 0.2)',
               borderRadius: 20,
-              marginHorizontal: 16,
+              paddingHorizontal: 16, // 내부 패딩으로 시각적 여백 유지
               marginBottom: Platform.OS === 'ios' ? 10 : 8,
               paddingBottom: Platform.OS === 'ios' ? 24 : 8,
               paddingTop: 6,
