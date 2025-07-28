@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, Alert, Platform, Vibration } from 'react-native';
 import { theme } from '../../theme';
 import apiClient from '../../services/apiClient';
 import { aiFeedbackService } from '../../services/aiFeedbackService';
@@ -182,8 +182,11 @@ const TimerScreen: React.FC = () => {
     }]);
     
     // 효과음 재생 (알림이 켜져있을 때만)
+    console.log('모드전환 시 soundEnabled 상태:', soundEnabled);
     if (soundEnabled) {
       playNotificationSound();
+    } else {
+      console.log('알림이 꺼져있어서 효과음 재생하지 않음');
     }
     
     // 즉시 타이머 재시작
@@ -197,10 +200,16 @@ const TimerScreen: React.FC = () => {
 
   // 효과음 재생 함수
   const playNotificationSound = () => {
-    // React Native에서는 기본적으로 사운드 API가 제한적이므로
-    // 하드웨어 피드백을 통해 효과음을 시뮬레이션
-    // 실제로는 expo-av나 react-native-sound 라이브러리 사용 권장
-    console.log('🔔 모드전환 알림음 재생');
+    console.log('🔔 모드전환 알림음 재생 - soundEnabled:', soundEnabled);
+    
+    // 하드웨어 피드백으로 효과음 시뮬레이션
+    if (Platform.OS === 'ios') {
+      // iOS의 경우 간단한 진동 사용
+      Vibration.vibrate(200); // 200ms 진동
+    } else {
+      // Android의 경우 Vibration API 사용
+      Vibration.vibrate(200); // 200ms 진동
+    }
   };
 
   // 설정 다이얼 핸들러

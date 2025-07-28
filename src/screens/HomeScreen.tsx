@@ -11,6 +11,7 @@ import { scheduleService } from '../services/scheduleService';
 import { ScheduleResponse } from '../types/schedule';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import apiClient from '../services/apiClient';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -43,14 +44,36 @@ const HomeScreen: React.FC = () => {
     }
   };
 
-  // 오늘 공부시간 계산 (임시 데이터 - 실제로는 타이머 기록에서 가져와야 함)
-  const calculateTodayStudyTime = () => {
-    // TODO: 실제 타이머 기록에서 오늘 공부시간을 가져오는 로직 구현
-    // 현재는 임시로 스케줄의 plannedStudyMinutes 합계 사용
-    const totalMinutes = todaySchedules.reduce((total, schedule) => {
-      return total + (schedule.plannedStudyMinutes || 0);
-    }, 0);
-    setTodayStudyTime(totalMinutes);
+  // 오늘 공부시간 계산
+  const calculateTodayStudyTime = async () => {
+    try {
+      // 오늘 날짜의 타이머 기록 조회
+      const response = await apiClient.get('/timer/history');
+      if (response.success && response.data) {
+        const todayRecords = response.data.filter((record: any) => {
+          const recordDate = new Date(record.startTime).toISOString().split('T')[0];
+          return recordDate === today;
+        });
+        
+        // 오늘 기록의 총 공부시간 계산 (초 단위를 분으로 변환)
+        const totalStudySeconds = todayRecords.reduce((total: number, record: any) => {
+          return total + (record.studyTime || 0);
+        }, 0);
+        
+        const totalStudyMinutes = Math.floor(totalStudySeconds / 60);
+        setTodayStudyTime(totalStudyMinutes);
+        
+        console.log('오늘 공부시간 계산:', {
+          오늘기록수: todayRecords.length,
+          총공부초: totalStudySeconds,
+          총공부분: totalStudyMinutes
+        });
+      }
+    } catch (error) {
+      console.error('오늘 공부시간 계산 에러:', error);
+      // 에러 시 기본값 0으로 설정
+      setTodayStudyTime(0);
+    }
   };
 
   // 시간 포맷팅
@@ -74,11 +97,8 @@ const HomeScreen: React.FC = () => {
 
   useEffect(() => {
     loadTodaySchedules();
-  }, []);
-
-  useEffect(() => {
     calculateTodayStudyTime();
-  }, [todaySchedules]);
+  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
