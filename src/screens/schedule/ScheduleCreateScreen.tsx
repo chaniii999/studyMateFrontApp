@@ -22,12 +22,26 @@ interface ScheduleCreateScreenProps {
   };
 }
 
+// 무지개 색상 프리셋
+const COLOR_PRESETS = [
+  { name: '빨강', color: '#FF6B6B', description: '열정적인' },
+  { name: '주황', color: '#FF8E53', description: '활동적인' },
+  { name: '노랑', color: '#FFD93D', description: '밝은' },
+  { name: '연두', color: '#6BCF7F', description: '상쾌한' },
+  { name: '녹색', color: '#4ECDC4', description: '집중력' },
+  { name: '하늘', color: '#45B7D1', description: '차분한' },
+  { name: '파랑', color: '#6C5CE7', description: '신뢰할 수 있는' },
+  { name: '보라', color: '#A29BFE', description: '창의적인' },
+  { name: '핑크', color: '#FD79A8', description: '부드러운' },
+  { name: '회색', color: '#636E72', description: '중성적인' },
+];
+
 const ScheduleCreateScreen: React.FC<ScheduleCreateScreenProps> = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    color: '#6EC1E4',
+    color: COLOR_PRESETS[5].color, // 기본값을 하늘색으로
     scheduleDate: route.params?.selectedDate || new Date().toISOString().split('T')[0],
     startTime: '',
     endTime: '',
@@ -44,6 +58,46 @@ const ScheduleCreateScreen: React.FC<ScheduleCreateScreenProps> = ({ navigation,
 
   const handleOptionSelect = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // 색상 선택 컴포넌트
+  const renderColorPicker = () => {
+    return (
+      <View style={styles.inputGroup}>
+        <Text style={styles.inputLabel}>색상 *</Text>
+        <Text style={styles.inputDescription}>스케줄의 테마 색상을 선택하세요</Text>
+        
+        <View style={styles.colorGrid}>
+          {COLOR_PRESETS.map((colorPreset, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[
+                styles.colorOption,
+                { backgroundColor: colorPreset.color },
+                formData.color === colorPreset.color && styles.selectedColor
+              ]}
+              onPress={() => handleOptionSelect('color', colorPreset.color)}
+              activeOpacity={0.8}
+            >
+              {formData.color === colorPreset.color && (
+                <View style={styles.colorCheckmark}>
+                  <Text style={styles.checkmarkText}>✓</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+        
+        {/* 선택된 색상 정보 */}
+        <View style={styles.selectedColorInfo}>
+          <View style={[styles.selectedColorPreview, { backgroundColor: formData.color }]} />
+          <Text style={styles.selectedColorText}>
+            {COLOR_PRESETS.find(preset => preset.color === formData.color)?.name || '사용자 정의'} - {' '}
+            {COLOR_PRESETS.find(preset => preset.color === formData.color)?.description || ''}
+          </Text>
+        </View>
+      </View>
+    );
   };
 
   const renderTextInput = (
@@ -208,7 +262,7 @@ const ScheduleCreateScreen: React.FC<ScheduleCreateScreenProps> = ({ navigation,
           {/* 기본 정보 */}
           {renderTextInput('제목', 'title', '스케줄 제목을 입력하세요', true)}
           {renderTextInput('설명', 'description', '스케줄에 대한 설명을 입력하세요')}
-          {renderTextInput('색상', 'color', '#6EC1E4')}
+          {renderColorPicker()}
           {renderTextInput('날짜', 'scheduleDate', 'YYYY-MM-DD', true)}
           {renderTextInput('시작 시간', 'startTime', 'HH:MM')}
           {renderTextInput('종료 시간', 'endTime', 'HH:MM')}
@@ -446,6 +500,80 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     flex: 1,
+  },
+  // 색상 선택기 스타일
+  colorGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: theme.spacing[3],
+    marginBottom: theme.spacing[4],
+  },
+  colorOption: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginBottom: theme.spacing[3],
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  selectedColor: {
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 8,
+  },
+  colorCheckmark: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkmarkText: {
+    color: '#333',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  selectedColorInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.background.secondary,
+    padding: theme.spacing[3],
+    borderRadius: theme.borderRadius.md,
+    marginTop: theme.spacing[2],
+  },
+  selectedColorPreview: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    marginRight: theme.spacing[3],
+    borderWidth: 2,
+    borderColor: '#FFF',
+  },
+  selectedColorText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: theme.colors.text.primary,
+    flex: 1,
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing[1],
+  },
+  inputDescription: {
+    fontSize: 14,
+    color: theme.colors.text.secondary,
+    marginBottom: theme.spacing[2],
   },
 });
 

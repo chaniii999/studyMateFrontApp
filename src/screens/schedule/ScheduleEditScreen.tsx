@@ -14,6 +14,20 @@ import Button from '../../components/common/Button';
 import { scheduleService } from '../../services/scheduleService';
 import { ScheduleRequest, ScheduleResponse, ScheduleStatus } from '../../types/schedule';
 
+// 무지개 색상 프리셋 (ScheduleCreateScreen과 동일)
+const COLOR_PRESETS = [
+  { name: '빨강', color: '#FF6B6B', description: '열정적인' },
+  { name: '주황', color: '#FF8E53', description: '활동적인' },
+  { name: '노랑', color: '#FFD93D', description: '밝은' },
+  { name: '연두', color: '#6BCF7F', description: '상쾌한' },
+  { name: '녹색', color: '#4ECDC4', description: '집중력' },
+  { name: '하늘', color: '#45B7D1', description: '차분한' },
+  { name: '파랑', color: '#6C5CE7', description: '신뢰할 수 있는' },
+  { name: '보라', color: '#A29BFE', description: '창의적인' },
+  { name: '핑크', color: '#FD79A8', description: '부드러운' },
+  { name: '회색', color: '#636E72', description: '중성적인' },
+];
+
 interface ScheduleEditScreenProps {
   navigation: any;
   route: {
