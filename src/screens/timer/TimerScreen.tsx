@@ -1195,7 +1195,8 @@ const TimerScreen: React.FC = () => {
         </Animated.View>
       )}
       
-            {/* AI 피드백 버튼 */}
+            {/* AI 피드백 버튼 - 임시 주석 처리 */}
+      {/* 
       {savedTimerId && (
         <Animated.View style={{ 
           opacity: opacityAnimatedValue,
@@ -1215,14 +1216,17 @@ const TimerScreen: React.FC = () => {
           </TouchableOpacity>
         </Animated.View>
       )}
+      */}
 
-      {/* AI 피드백 설문조사 모달 */}
+      {/* AI 피드백 설문조사 모달 - 임시 주석 처리 */}
+      {/*
       <AiFeedbackSurvey
         visible={surveyVisible}
         onClose={() => setSurveyVisible(false)}
         onSubmit={handleSurveySubmit}
         loading={aiLoading}
       />
+      */}
     </View>
   );
 };
