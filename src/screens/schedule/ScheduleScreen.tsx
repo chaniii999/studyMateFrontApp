@@ -3,14 +3,14 @@ import {
   View, 
   Text, 
   StyleSheet, 
-  SafeAreaView, 
   TouchableOpacity, 
   FlatList, 
   Alert,
   ActivityIndicator,
   RefreshControl,
   ScrollView,
-  Animated
+  Animated,
+  StatusBar
 } from 'react-native';
 import { Calendar, LocaleConfig } from 'react-native-calendars';
 import { Swipeable } from 'react-native-gesture-handler';
@@ -21,6 +21,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { scheduleService } from '../../services/scheduleService';
 import { ScheduleResponse, ScheduleStatus } from '../../types/schedule';
 import Button from '../../components/common/Button';
+import { DreamyNightBackground } from '../../components';
 
 // 한글 설정 (date-fns용)
 LocaleConfig.locales['kr'] = {
@@ -389,17 +390,21 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ navigation }) => {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <DreamyNightBackground />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={theme.colors.primary[500]} />
+          <ActivityIndicator size="large" color="#FFFFFF" />
           <Text style={styles.loadingText}>스케줄을 불러오는 중...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+      <DreamyNightBackground />
       <View style={styles.header}>
         <TouchableOpacity onPress={handleViewModeChange}>
           <Text style={styles.title}>{getViewModeTitle()} 스케줄</Text>
@@ -478,16 +483,20 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ navigation }) => {
           )}
       </View>
       </Animated.ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background.primary,
+    backgroundColor: 'transparent',
   },
   loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 60, // StatusBar 공간 확보
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -495,7 +504,10 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 16,
     fontSize: 16,
-    color: theme.colors.text.secondary,
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   header: {
     flexDirection: 'row',
@@ -503,32 +515,57 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: theme.spacing[4],
     paddingVertical: theme.spacing[3],
+    paddingTop: 60, // StatusBar 공간 확보
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border.light,
+    borderBottomColor: 'rgba(255, 255, 255, 0.2)',
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: theme.colors.text.primary,
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   addButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: theme.colors.primary[500],
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: 'rgba(0, 0, 0, 0.3)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
+    elevation: 5,
   },
   addButtonText: {
     fontSize: 24,
-    color: theme.colors.text.inverse,
+    color: '#FFFFFF',
     fontWeight: 'bold',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   scrollContainer: {
     flex: 1,
   },
   calendarSection: {
-    backgroundColor: theme.colors.background.primary,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 16,
+    margin: theme.spacing[4],
+    padding: theme.spacing[3],
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    shadowColor: 'rgba(0, 0, 0, 0.3)',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   weekDaysContainer: {
     backgroundColor: theme.colors.background.secondary,
@@ -600,20 +637,45 @@ const styles = StyleSheet.create({
   },
   scheduleList: {
     padding: theme.spacing[4],
+    paddingBottom: 120, // 네비게이션 바 공간 확보
   },
   listTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: theme.colors.text.primary,
-    marginBottom: theme.spacing[3],
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: theme.spacing[4],
+    textAlign: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+    shadowColor: 'rgba(0, 0, 0, 0.3)',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    letterSpacing: 0.5,
   },
   scheduleItem: {
-    backgroundColor: theme.colors.background.secondary,
-    borderRadius: theme.borderRadius.lg,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 16,
     padding: theme.spacing[4],
     marginBottom: theme.spacing[3],
     borderLeftWidth: 4,
-    borderLeftColor: theme.colors.primary[500],
+    borderLeftColor: '#64B5F6',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    shadowColor: 'rgba(0, 0, 0, 0.3)',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    backdropFilter: 'blur(10px)',
   },
   scheduleHeader: {
     flexDirection: 'row',
@@ -622,10 +684,14 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing[2],
   },
   scheduleTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: theme.colors.text.primary,
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#FFFFFF',
     flex: 1,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+    letterSpacing: 0.3,
   },
   statusBadge: {
     paddingHorizontal: theme.spacing[3],
@@ -697,11 +763,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: theme.spacing[8],
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 20,
+    marginVertical: theme.spacing[4],
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
   },
   emptyText: {
-    fontSize: 16,
-    color: theme.colors.text.secondary,
+    fontSize: 18,
+    color: '#FFFFFF',
     marginBottom: theme.spacing[4],
+    textAlign: 'center',
+    fontWeight: '600',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+    opacity: 0.9,
   },
   emptyButton: {
     minWidth: 200,
