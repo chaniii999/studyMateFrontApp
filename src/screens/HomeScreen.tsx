@@ -52,7 +52,7 @@ const HomeScreen: React.FC = () => {
     }
   };
 
-  // 홈 통계 조회 (새로운 API 사용)
+  // 홈 통계 조회 (백엔드 home-stats API 사용)
   const loadHomeStats = async () => {
     try {
       console.log('홈 통계 API 호출 시작');
@@ -72,41 +72,118 @@ const HomeScreen: React.FC = () => {
         });
       } else {
         console.log('홈 통계 API 응답 실패:', response);
+        // API 실패 시 폴백 로직
+        await loadHomeStatsFromHistory();
       }
-    } catch (error) {
-      console.error('홈 통계 조회 에러:', error);
-      // 에러 시 기본값 0으로 설정
+    } catch (error: any) {
+      console.error('홈 통계 조회 에러:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        statusText: error.response?.statusText
+      });
+      
+      // 에러 시 폴백 로직
+      await loadHomeStatsFromHistory();
+    }
+  };
+
+  // 폴백용 클라이언트 사이드 계산
+  const loadHomeStatsFromHistory = async () => {
+    try {
+      console.log('폴백: 타이머 히스토리 API 호출 시작');
+      const response = await apiClient.get('/timer/history');
+      console.log('폴백: 타이머 히스토리 API 응답:', response);
+      
+      if (response.success && response.data) {
+        // 오늘 날짜 (로컬 시간대 기준)
+        const now = new Date();
+        const today = format(now, 'yyyy-MM-dd');
+        
+        // 이번 주 시작일 계산 (월요일)
+        const dayOfWeek = now.getDay(); // 0 = 일요일, 1 = 월요일, ...
+        const mondayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // 월요일까지의 오프셋
+        const thisMonday = new Date(now);
+        thisMonday.setDate(now.getDate() - mondayOffset);
+        const weekStart = format(thisMonday, 'yyyy-MM-dd');
+        
+        console.log('폴백: 날짜 계산:', { 
+          today, 
+          weekStart, 
+          currentDay: dayOfWeek,
+          mondayOffset 
+        });
+        
+        // 각 기록의 날짜를 확인하고 필터링
+        console.log('폴백: 전체 기록 확인 시작');
+        const todayRecords = [];
+        const weekRecords = [];
+        
+        for (const record of response.data) {
+          // startTime을 로컬 날짜로 변환 (시간대 고려)
+          const recordDate = new Date(record.startTime);
+          const recordDateString = format(recordDate, 'yyyy-MM-dd');
+          
+          console.log(`기록 ${record.id}: startTime=${record.startTime}, 변환된날짜=${recordDateString}, studyTime=${record.studyTime}`);
+          
+          // 오늘 기록인지 확인
+          if (recordDateString === today) {
+            todayRecords.push(record);
+            console.log(`✅ 오늘 기록으로 추가: ${record.id}`);
+          }
+          
+          // 이번 주 기록인지 확인 (월요일부터 오늘까지)
+          if (recordDateString >= weekStart && recordDateString <= today) {
+            weekRecords.push(record);
+            console.log(`✅ 이번주 기록으로 추가: ${record.id}`);
+          }
+        }
+        
+        // 오늘 총 공부시간 계산
+        const todayStudySeconds = todayRecords.reduce((total: number, record: any) => {
+          const studyTime = record.studyTime || 0;
+          console.log(`오늘 기록 ${record.id}: +${studyTime}초`);
+          return total + studyTime;
+        }, 0);
+        
+        // 이번 주 총 공부시간 계산
+        const weekStudySeconds = weekRecords.reduce((total: number, record: any) => {
+          const studyTime = record.studyTime || 0;
+          console.log(`이번주 기록 ${record.id}: +${studyTime}초`);
+          return total + studyTime;
+        }, 0);
+        
+        const todayStudyMinutes = Math.floor(todayStudySeconds / 60);
+        const weekStudyMinutes = Math.floor(weekStudySeconds / 60);
+        
+        setTodayStudyTime(todayStudyMinutes);
+        setWeekStudyTime(weekStudyMinutes);
+        
+        console.log('폴백: 홈 통계 계산 완료:', {
+          오늘기록수: todayRecords.length,
+          이번주기록수: weekRecords.length,
+          오늘공부초: todayStudySeconds,
+          오늘공부분: todayStudyMinutes,
+          이번주공부초: weekStudySeconds,
+          이번주공부분: weekStudyMinutes,
+          오늘기록들: todayRecords.map(r => ({ id: r.id, studyTime: r.studyTime, startTime: r.startTime })),
+          이번주기록들: weekRecords.map(r => ({ id: r.id, studyTime: r.studyTime, startTime: r.startTime }))
+        });
+      } else {
+        console.log('폴백: 타이머 히스토리 API 응답 실패:', response);
+        setTodayStudyTime(0);
+        setWeekStudyTime(0);
+      }
+    } catch (error: any) {
+      console.error('폴백: 타이머 히스토리 조회 에러:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      // 최종 실패 시 기본값 0으로 설정
       setTodayStudyTime(0);
       setWeekStudyTime(0);
-      
-      // 기존 방식으로 폴백
-      console.log('기존 방식으로 폴백 시도');
-      try {
-        const response = await apiClient.get('/timer/history');
-        if (response.success && response.data) {
-          const todayRecords = response.data.filter((record: any) => {
-            const recordDate = new Date(record.startTime).toISOString().split('T')[0];
-            return recordDate === today;
-          });
-          
-          const totalStudySeconds = todayRecords.reduce((total: number, record: any) => {
-            console.log('레코드 확인:', record);
-            return total + (record.studyTime || 0);
-          }, 0);
-          
-          const totalStudyMinutes = Math.floor(totalStudySeconds / 60);
-          setTodayStudyTime(totalStudyMinutes);
-          
-          console.log('폴백 방식으로 오늘 공부시간 계산:', {
-            오늘기록수: todayRecords.length,
-            총공부초: totalStudySeconds,
-            총공부분: totalStudyMinutes,
-            개별기록: todayRecords.map((r: any) => ({ id: r.id, studyTime: r.studyTime, startTime: r.startTime }))
-          });
-        }
-      } catch (fallbackError) {
-        console.error('폴백 방식도 실패:', fallbackError);
-      }
     }
   };
 
