@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, Alert, Platform, Vibration, Dimensions, ImageBackground } from 'react-native';
+
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Svg, { Circle } from 'react-native-svg';
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -349,14 +350,8 @@ const TimerScreen: React.FC = () => {
           // 다음 tick에서 handleSwitch 호출
           setTimeout(() => {
             console.log('타이머 종료 - handleSwitch 호출');
-            console.log('타이머 종료 시점의 soundEnabled:', soundEnabled);
-            // soundEnabled 상태를 직접 확인하여 안전하게 처리
-            if (soundEnabled) {
-              console.log('타이머 종료 시점에서 알림이 켜져있음 - 진동 실행');
-              Vibration.vibrate(200);
-            } else {
-              console.log('타이머 종료 시점에서 알림이 꺼져있음');
-            }
+            // 모드전환 알림음 재생 (playNotificationSound 내부에서 soundEnabled 확인)
+            playNotificationSound();
             handleSwitch();
           }, 0);
           return 0;
@@ -765,19 +760,35 @@ const TimerScreen: React.FC = () => {
     setSoundEnabled(prev => !prev);
   };
 
-  // 효과음 재생 함수
-  const playNotificationSound = () => {
-    console.log('🔔 모드전환 알림음 재생 - soundEnabled:', soundEnabled);
-    
-    // 하드웨어 피드백으로 효과음 시뮬레이션
-    if (Platform.OS === 'ios') {
-      // iOS의 경우 간단한 진동 사용
-      Vibration.vibrate(200); // 200ms 진동
-    } else {
-      // Android의 경우 Vibration API 사용
-      Vibration.vibrate(200); // 200ms 진동
+    // 효과음 재생 함수 (Enter 키 느낌의 진동 패턴)
+  const playNotificationSound = useCallback(() => {
+    if (!soundEnabled) {
+      return;
     }
-  };
+
+    try {
+      // Enter 키를 누르는 느낌의 진동 패턴
+      // 짧고 강한 진동으로 키보드 타이핑 느낌을 표현
+      if (Platform.OS === 'ios') {
+        // iOS: 키보드 입력 느낌의 진동 패턴
+        Vibration.vibrate([50, 30, 80]);
+        console.log('iOS Enter 키 진동 재생');
+      } else {
+        // Android: 동일한 패턴 적용
+        Vibration.vibrate([50, 30, 80]);
+        console.log('Android Enter 키 진동 재생');
+      }
+      
+    } catch (error) {
+      console.log('진동 재생 에러:', error);
+      // 에러 시 기본 진동으로 대체
+      try {
+        Vibration.vibrate(100);
+      } catch (fallbackError) {
+        console.log('기본 진동도 실패:', fallbackError);
+      }
+    }
+  }, [soundEnabled]);
 
   // 설정 다이얼 핸들러
   const handleSettings = () => {

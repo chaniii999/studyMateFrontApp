@@ -5,9 +5,9 @@ PODS:
   - FBLazyVector (0.79.5)
   - fmt (11.0.2)
   - glog (0.3.5)
-  - hermes-engine (0.79.4):
-    - hermes-engine/Pre-built (= 0.79.4)
-  - hermes-engine/Pre-built (0.79.4)
+  - hermes-engine (0.79.5):
+    - hermes-engine/Pre-built (= 0.79.5)
+  - hermes-engine/Pre-built (0.79.5)
   - RCT-Folly (2024.11.18.00):
     - boost
     - DoubleConversion
@@ -1952,11 +1952,6 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - RNSound (0.11.2):
-    - React-Core
-    - RNSound/Core (= 0.11.2)
-  - RNSound/Core (0.11.2):
-    - React-Core
   - RNSVG (15.12.0):
     - DoubleConversion
     - glog
@@ -2110,7 +2105,6 @@ DEPENDENCIES:
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
   - RNReanimated (from `../node_modules/react-native-reanimated`)
   - RNScreens (from `../node_modules/react-native-screens`)
-  - RNSound (from `../node_modules/react-native-sound`)
   - RNSVG (from `../node_modules/react-native-svg`)
   - RNVectorIcons (from `../node_modules/react-native-vector-icons`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
@@ -2269,8 +2263,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-reanimated"
   RNScreens:
     :path: "../node_modules/react-native-screens"
-  RNSound:
-    :path: "../node_modules/react-native-sound"
   RNSVG:
     :path: "../node_modules/react-native-svg"
   RNVectorIcons:
@@ -2285,7 +2277,7 @@ SPEC CHECKSUMS:
   FBLazyVector: d2a9cd223302b6c9aa4aa34c1a775e9db609eb52
   fmt: a40bb5bd0294ea969aaaba240a927bd33d878cdd
   glog: 5683914934d5b6e4240e497e0f4a3b42d1854183
-  hermes-engine: 8b5a5eb386b990287d072fd7b6f6ebd9544dd251
+  hermes-engine: f03b0e06d3882d71e67e45b073bb827da1a21aae
   RCT-Folly: 36fe2295e44b10d831836cc0d1daec5f8abcf809
   RCTDeprecation: 5f638f65935e273753b1f31a365db6a8d6dc53b5
   RCTRequired: 8b46a520ea9071e2bc47d474aa9ca31b4a935bd8
@@ -2353,7 +2345,6 @@ SPEC CHECKSUMS:
   RNGestureHandler: ccf4105b125002bd88e39d2a1f2b7e6001bcdf34
   RNReanimated: 8b24b49fc13fce9a6e1729ccff645a63d2b7a6d1
   RNScreens: fd709d812885ccf4fac5cb35389147c399c0f164
-  RNSound: 6c156f925295bdc83e8e422e7d8b38d33bc71852
   RNSVG: 50819276c95d91ccd8fbe5cfea7e09a416c9beaa
   RNVectorIcons: ce6c966578fd7134980ba7ceaf27a3c616159052
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
