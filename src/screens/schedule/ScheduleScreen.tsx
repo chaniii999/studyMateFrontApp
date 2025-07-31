@@ -278,7 +278,10 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ navigation }) => {
         rightThreshold={40}
       >
         <TouchableOpacity
-          style={styles.scheduleItem}
+          style={[
+            styles.scheduleItem,
+            { borderLeftColor: item.color || '#64B5F6' }
+          ]}
           onPress={() => handleSchedulePress(item)}
           activeOpacity={0.7}
         >
@@ -667,7 +670,7 @@ const styles = StyleSheet.create({
     padding: theme.spacing[4],
     marginBottom: theme.spacing[3],
     borderLeftWidth: 4,
-    borderLeftColor: '#64B5F6',
+    // borderLeftColor는 동적으로 설정됨
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
     shadowColor: 'rgba(0, 0, 0, 0.3)',

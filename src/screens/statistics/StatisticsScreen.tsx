@@ -397,15 +397,21 @@ const styles = StyleSheet.create({
   aiTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.primary[500],
+    color: '#FFFFFF', // 흰색으로 변경
     marginBottom: 8,
     marginTop: 12,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   aiText: {
     fontSize: 14,
-    color: theme.colors.text.primary,
+    color: '#FFFFFF', // 흰색으로 변경
     lineHeight: 20,
     marginBottom: 8,
+    textShadowColor: 'rgba(0, 0, 0, 0.7)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   aiButton: {
     marginTop: 16,
@@ -448,13 +454,19 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 12,
-    color: theme.colors.text.secondary,
+    color: '#E0E0E0', // 밝은 회색으로 변경
     marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.7)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
   summaryValue: {
     fontSize: 16,
     fontWeight: '600',
-    color: theme.colors.primary[500],
+    color: '#FFFFFF', // 흰색으로 변경
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   detailsSection: {
     marginBottom: 16,
