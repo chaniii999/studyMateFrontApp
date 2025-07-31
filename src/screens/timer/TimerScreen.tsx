@@ -1119,9 +1119,15 @@ const TimerScreen: React.FC = () => {
                 <Text style={styles.nightTimeText}>
                   {formatTime(remaining)}
                 </Text>
-                <Text style={styles.nightStatusText}>
-                  {isStudy ? '집중 중..' : '휴식 중 🌙'}
-                </Text>
+                {isRunning ? (
+                  <Text style={styles.nightStatusText}>
+                    {isStudy ? '집중 중..' : '휴식 중 🌙'}
+                  </Text>
+                ) : (
+                  <Text style={styles.nightStatusTextIdle}>
+                    시작을 눌러주세요
+                  </Text>
+                )}
               </View>
             </TouchableOpacity>
           </View>
@@ -1601,6 +1607,15 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0, 0, 0, 0.5)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
+  },
+  nightStatusTextIdle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontWeight: '400',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+    fontStyle: 'italic',
   },
   nightButtonRow: {
     flexDirection: 'row',
