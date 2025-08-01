@@ -21,7 +21,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { scheduleService } from '../../services/scheduleService';
 import { ScheduleResponse, ScheduleStatus } from '../../types/schedule';
 import Button from '../../components/common/Button';
-import { DreamyNightBackground } from '../../components';
+import DreamyNightBackground from '../../components/common/DreamyNightBackground';
 
 // 한글 설정 (date-fns용)
 LocaleConfig.locales['kr'] = {
