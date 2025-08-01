@@ -9,6 +9,7 @@ import { aiFeedbackService } from '../../services/aiFeedbackService';
 import { StudySessionSummary, AiFeedbackRequest } from '../../types/aiFeedback';
 import AiFeedbackSurvey, { AiFeedbackSurveyData } from '../../components/AiFeedbackSurvey';
 import { useFocusEffect } from '@react-navigation/native';
+import { timerService } from '../../services';
 
 interface TimerRecord {
   id: number;
@@ -116,6 +117,15 @@ const StatisticsScreen: React.FC = () => {
         </Text>
         <Text style={styles.summaryText}>{item.summary || '요약 없음'}</Text>
         
+        {/* 삭제 버튼 - 우상단 */}
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => handleDeleteRecord(item)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.deleteButtonText}>🗑️</Text>
+        </TouchableOpacity>
+        
         {/* AI 피드백 토글 버튼 */}
         {item.aiFeedback && (
           <TouchableOpacity
@@ -210,6 +220,37 @@ const StatisticsScreen: React.FC = () => {
   const handleAiFeedback = async (record: TimerRecord) => {
     setSelectedRecord(record);
     setSurveyVisible(true);
+  };
+
+  // 타이머 기록 삭제 함수
+  const handleDeleteRecord = async (record: TimerRecord) => {
+    Alert.alert(
+      '기록 삭제',
+      `${formatDate(record.startTime)} 기록을 삭제하시겠습니까?\n\n공부 시간: ${formatTime(record.studyTime)}\n휴식 시간: ${formatTime(record.restTime)}`,
+      [
+        {
+          text: '취소',
+          style: 'cancel',
+        },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await timerService.deleteTimer(record.id);
+              
+              // 로컬 상태에서 삭제된 기록 제거
+              setRecords(prev => prev.filter(item => item.id !== record.id));
+              
+              Alert.alert('삭제 완료', '타이머 기록이 삭제되었습니다.');
+            } catch (error) {
+              console.error('타이머 기록 삭제 에러:', error);
+              Alert.alert('삭제 실패', '타이머 기록 삭제에 실패했습니다.');
+            }
+          },
+        },
+      ]
+    );
   };
 
   const toggleFeedback = (recordId: number) => {
@@ -329,6 +370,7 @@ const styles = StyleSheet.create({
     paddingBottom: 120, // 네비게이션 바 영역을 고려한 하단 패딩
   },
   card: {
+    position: 'relative', // 삭제 버튼 absolute 위치를 위해 추가
     marginBottom: theme.spacing[4],
     backgroundColor: 'rgba(255, 255, 255, 0.12)', // 반투명 글래스모피즘
     borderRadius: 18,
@@ -495,6 +537,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.colors.text.primary,
     fontWeight: '500',
+  },
+  deleteButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 36,
+    height: 36,
+    backgroundColor: 'rgba(255, 68, 68, 0.9)',
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  deleteButtonText: {
+    fontSize: 18,
+    color: '#FFFFFF',
   },
 });
 
