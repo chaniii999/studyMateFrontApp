@@ -272,6 +272,14 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ navigation }) => {
   const renderScheduleItem = ({ item }: { item: ScheduleResponse }) => {
     if (!item) return null;
     
+    // 디버그: subtitle 정보 확인
+    console.log('스케줄 아이템:', {
+      title: item.title,
+      subtitle: item.subtitle,
+      subtitleExists: !!item.subtitle,
+      subtitleTrimmed: item.subtitle?.trim()
+    });
+    
     return (
       <Swipeable
         renderRightActions={() => renderSwipeActions(item)}
@@ -285,20 +293,38 @@ const ScheduleScreen: React.FC<ScheduleScreenProps> = ({ navigation }) => {
           onPress={() => handleSchedulePress(item)}
           activeOpacity={0.7}
         >
-          <View style={styles.scheduleHeader}>
-            <Text style={styles.scheduleTitle}>{item.title}</Text>
+          {/* 시간 정보 - 우상단 */}
+          {(item.startTime && item.endTime) && (
+            <View style={styles.scheduleTimeContainer}>
+              <Text style={styles.scheduleTime}>
+                {formatTime(item.startTime)} - {formatTime(item.endTime)}
+              </Text>
+            </View>
+          )}
+          
+          {/* 상태 배지 - 우상단 (시간 아래) */}
+          <View style={styles.statusBadgeContainer}>
             <View style={[styles.statusBadge, { backgroundColor: getStatusText(item.status) }]}>
               <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
             </View>
           </View>
           
-          <View style={styles.scheduleInfo}>
-            <Text style={styles.scheduleTime}>
-              {formatTime(item.startTime)} - {formatTime(item.endTime)}
-            </Text>
-            {item.studyGoal && (
-              <Text style={styles.scheduleGoal} numberOfLines={1}>
-                목표: {item.studyGoal}
+          {/* 메인 콘텐츠 - 왼쪽부터 아래로 순서대로 */}
+          <View style={styles.scheduleContent}>
+            {/* 1. 제목 */}
+            <Text style={styles.scheduleTitle}>{item.title}</Text>
+            
+            {/* 2. 소제목 */}
+            {item.subtitle && item.subtitle.trim() && (
+              <Text style={styles.scheduleSubtitle} numberOfLines={2}>
+                {item.subtitle}
+              </Text>
+            )}
+            
+            {/* 3. 설명 */}
+            {item.description && (
+              <Text style={styles.scheduleDescription} numberOfLines={3}>
+                {item.description}
               </Text>
             )}
           </View>
@@ -665,6 +691,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   scheduleItem: {
+    position: 'relative', // absolute 위치를 위해 추가
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 16,
     padding: theme.spacing[4],
@@ -679,6 +706,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
     backdropFilter: 'blur(10px)',
+    minHeight: 80, // 최소 높이 확보
   },
   scheduleHeader: {
     flexDirection: 'row',
@@ -807,6 +835,58 @@ const styles = StyleSheet.create({
   },
   emptyButton: {
     minWidth: 200,
+  },
+  // 새로운 레이아웃 스타일들
+  scheduleTimeContainer: {
+    position: 'absolute',
+    top: theme.spacing[3],
+    right: theme.spacing[3],
+    zIndex: 1,
+  },
+  scheduleTime: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontWeight: '600',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  statusBadgeContainer: {
+    position: 'absolute',
+    top: theme.spacing[6],
+    right: theme.spacing[3],
+    zIndex: 1,
+  },
+  scheduleContent: {
+    flex: 1,
+    paddingRight: 80, // 우상단 시간/상태 공간 확보
+  },
+  scheduleTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: theme.spacing[1],
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
+  scheduleSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontStyle: 'italic',
+    marginBottom: theme.spacing[1],
+    lineHeight: 18,
+    textShadowColor: 'rgba(0, 0, 0, 0.7)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
+  },
+  scheduleDescription: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.7)',
+    lineHeight: 16,
+    textShadowColor: 'rgba(0, 0, 0, 0.7)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
 });
 

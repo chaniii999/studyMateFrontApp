@@ -39,19 +39,19 @@ const COLOR_PRESETS = [
 const ScheduleCreateScreen: React.FC<ScheduleCreateScreenProps> = ({ navigation, route }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    color: COLOR_PRESETS[5].color, // 기본값을 하늘색으로
-    scheduleDate: route.params?.selectedDate || new Date().toISOString().split('T')[0],
+    title: '',              // 1. 제목 (공부주제, 스케줄명칭)
+    subtitle: '',           // 2. 소제목 (공부 어느정도 할지)
+    description: '',        // 3. 설명 (구체적인 설명)
+    scheduleDate: route.params?.selectedDate || new Date().toISOString().split('T')[0], // 4. 날짜
     startTime: '',
     endTime: '',
+    difficulty: 'MEDIUM',   // 5. 난이도
+    plannedStudyMinutes: '25',  // 6. 계획 학습시간
+    plannedBreakMinutes: '5',   // 6. 계획 휴식시간
+    color: COLOR_PRESETS[5].color, // 색상
     isAllDay: false,
     isRecurring: false,
     studyMode: 'POMODORO',
-    plannedStudyMinutes: '25',
-    plannedBreakMinutes: '5',
-    studyGoal: '',
-    difficulty: 'MEDIUM',
     reminderMinutes: '15',
     isReminderEnabled: true,
   });
@@ -61,6 +61,43 @@ const ScheduleCreateScreen: React.FC<ScheduleCreateScreenProps> = ({ navigation,
   };
 
   // 색상 선택 컴포넌트
+  // 날짜 선택 컴포넌트 (다이얼 방식)
+  const renderDatePicker = () => {
+    return (
+      <View style={styles.inputGroup}>
+        <Text style={styles.inputTitle}>
+          4. 날짜 <Text style={styles.required}>*</Text>
+        </Text>
+        <TouchableOpacity
+          style={styles.textInput}
+          onPress={() => {
+            Alert.prompt(
+              '날짜 설정',
+              'YYYY-MM-DD 형식으로 입력하세요',
+              [
+                { text: '취소', style: 'cancel' },
+                {
+                  text: '확인',
+                  onPress: (text) => {
+                    if (text) {
+                      handleOptionSelect('scheduleDate', text);
+                    }
+                  },
+                },
+              ],
+              'plain-text',
+              formData.scheduleDate
+            );
+          }}
+        >
+          <Text style={formData.scheduleDate ? styles.textInputText : styles.textInputPlaceholder}>
+            {formData.scheduleDate || 'YYYY-MM-DD'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   const renderColorPicker = () => {
     return (
       <View style={styles.inputGroup}>
@@ -259,44 +296,67 @@ const ScheduleCreateScreen: React.FC<ScheduleCreateScreenProps> = ({ navigation,
             새로운 스케줄을 만들어 학습 계획을 세워보세요!
           </Text>
 
-          {/* 기본 정보 */}
-          {renderTextInput('제목', 'title', '스케줄 제목을 입력하세요', true)}
-          {renderTextInput('설명', 'description', '스케줄에 대한 설명을 입력하세요')}
-          {renderColorPicker()}
-          {renderTextInput('날짜', 'scheduleDate', 'YYYY-MM-DD', true)}
-          {renderTextInput('시작 시간', 'startTime', 'HH:MM')}
-          {renderTextInput('종료 시간', 'endTime', 'HH:MM')}
-
-          {/* 학습 설정 */}
-          {renderOptionGroup('학습 모드', 'studyMode', ['POMODORO', 'FOCUS', 'BREAK'], true)}
-          {renderOptionGroup('난이도', 'difficulty', ['EASY', 'MEDIUM', 'HARD'], true)}
-          {renderTextInput('계획 학습 시간 (분)', 'plannedStudyMinutes', '25')}
-          {renderTextInput('계획 휴식 시간 (분)', 'plannedBreakMinutes', '5')}
-          {renderTextInput('학습 목표', 'studyGoal', '이번 학습의 목표를 설정하세요')}
-          {renderTextInput('알림 시간 (분 전)', 'reminderMinutes', '15')}
+          {/* 1. 제목 (공부주제, 스케줄명칭) */}
+          {renderTextInput('1. 제목 (공부주제, 스케줄명칭)', 'title', '예: 영어 문법 공부, 수학 미적분 학습', true)}
+          
+          {/* 2. 소제목 (공부 어느정도 할지) */}
+          {renderTextInput('2. 소제목 (학습 범위)', 'subtitle', '예: 현재완료시제 3단원, 미분 기초 개념')}
+          
+          {/* 3. 설명 (구체적인 설명) */}
+          {renderTextInput('3. 구체적인 설명', 'description', '예: 현재완료시제 문법 규칙과 예문 학습, 연습문제 풀이')}
+          
+          {/* 4. 날짜 (다이얼 방식으로 설정) */}
+          {renderDatePicker()}
+          
+          {/* 5. 난이도 */}
+          {renderOptionGroup('5. 난이도', 'difficulty', ['EASY', 'MEDIUM', 'HARD'], true)}
+          
+          {/* 6. 계획 학습시간/휴식시간 */}
+          <View style={styles.timeGroup}>
+            <Text style={styles.sectionTitle}>6. 계획 학습시간 / 휴식시간</Text>
+            <View style={styles.timeRow}>
+              {renderTextInput('학습시간 (분)', 'plannedStudyMinutes', '25')}
+              {renderTextInput('휴식시간 (분)', 'plannedBreakMinutes', '5')}
+            </View>
+          </View>
+          
+          {/* 추가 설정 */}
+          <View style={styles.additionalSettings}>
+            <Text style={styles.sectionTitle}>추가 설정</Text>
+            {renderColorPicker()}
+            {renderTextInput('시작 시간', 'startTime', 'HH:MM')}
+            {renderTextInput('종료 시간', 'endTime', 'HH:MM')}
+            {renderTextInput('알림 시간 (분 전)', 'reminderMinutes', '15')}
+          </View>
 
           {/* 미리보기 */}
           <View style={styles.previewSection}>
             <Text style={styles.previewTitle}>👀 미리보기</Text>
             <View style={[styles.previewCard, { borderLeftColor: formData.color }]}>
               <Text style={styles.previewCardTitle}>{formData.title || '제목 미입력'}</Text>
+              {formData.subtitle ? (
+                <Text style={styles.previewCardSubtitle}>{formData.subtitle}</Text>
+              ) : (
+                <Text style={styles.previewCardSubtitle}>소제목 미입력</Text>
+              )}
+              {formData.description && (
+                <Text style={styles.previewCardDescription}>{formData.description}</Text>
+              )}
+              <Text style={styles.previewCardDate}>📅 {formData.scheduleDate}</Text>
               <Text style={styles.previewCardTime}>
                 {formData.startTime && formData.endTime 
-                  ? `${formData.startTime} - ${formData.endTime}`
-                  : '종일'
+                  ? `⏰ ${formData.startTime} - ${formData.endTime}`
+                  : '⏰ 종일'
                 }
               </Text>
-              {formData.studyGoal && (
-                <Text style={styles.previewCardGoal}>목표: {formData.studyGoal}</Text>
-              )}
+              <Text style={styles.previewCardStudyTime}>
+                📚 학습 {formData.plannedStudyMinutes}분 / 휴식 {formData.plannedBreakMinutes}분
+              </Text>
               <View style={styles.previewCardBadges}>
                 <View style={[styles.previewCardBadge, { backgroundColor: getDifficultyColor(formData.difficulty) }]}>
                   <Text style={styles.previewCardBadgeText}>
                     {getDifficultyText(formData.difficulty)}
                   </Text>
-                </View>
-                <View style={[styles.previewCardBadge, { backgroundColor: theme.colors.primary[500] }]}>
-                  <Text style={styles.previewCardBadgeText}>{formData.studyMode}</Text>
                 </View>
               </View>
             </View>
@@ -574,6 +634,53 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: theme.colors.text.secondary,
     marginBottom: theme.spacing[2],
+  },
+  // 새로운 스타일들
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing[3],
+    marginTop: theme.spacing[4],
+  },
+  timeGroup: {
+    marginTop: theme.spacing[4],
+  },
+  timeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: theme.spacing[3],
+  },
+  additionalSettings: {
+    marginTop: theme.spacing[6],
+    paddingTop: theme.spacing[4],
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  // 미리보기 추가 스타일들
+  previewCardSubtitle: {
+    fontSize: 14,
+    color: theme.colors.text.secondary,
+    marginBottom: theme.spacing[1],
+    fontStyle: 'italic',
+  },
+  previewCardDescription: {
+    fontSize: 13,
+    color: theme.colors.text.secondary,
+    marginBottom: theme.spacing[2],
+    lineHeight: 18,
+  },
+  previewCardDate: {
+    fontSize: 13,
+    color: theme.colors.primary[500],
+    marginBottom: theme.spacing[1],
+    fontWeight: '500',
+  },
+  previewCardStudyTime: {
+    fontSize: 13,
+    color: theme.colors.primary[600],
+    marginBottom: theme.spacing[2],
+    fontWeight: '500',
   },
 });
 

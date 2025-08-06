@@ -7,7 +7,7 @@ import {
 import { theme } from '../../theme';
 
 export interface CardProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   style?: ViewStyle;
   padding?: 'sm' | 'md' | 'lg';
   elevation?: 'sm' | 'md' | 'lg';

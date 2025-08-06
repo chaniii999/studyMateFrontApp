@@ -42,19 +42,19 @@ const ScheduleEditScreen: React.FC<ScheduleEditScreenProps> = ({ navigation, rou
   const [saving, setSaving] = useState(false);
   const [schedule, setSchedule] = useState<ScheduleResponse | null>(null);
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    color: '#6EC1E4',
-    scheduleDate: '',
+    title: '',              // 1. 제목 (공부주제, 스케줄명칭)
+    subtitle: '',           // 2. 소제목 (공부 어느정도 할지)
+    description: '',        // 3. 설명 (구체적인 설명)
+    scheduleDate: '',       // 4. 날짜
     startTime: '',
     endTime: '',
+    difficulty: 'MEDIUM',   // 5. 난이도
+    plannedStudyMinutes: '25',  // 6. 계획 학습시간
+    plannedBreakMinutes: '5',   // 6. 계획 휴식시간
+    color: '#6EC1E4',       // 색상
     isAllDay: false,
     isRecurring: false,
     studyMode: 'POMODORO',
-    plannedStudyMinutes: '25',
-    plannedBreakMinutes: '5',
-    studyGoal: '',
-    difficulty: 'MEDIUM',
     reminderMinutes: '15',
     isReminderEnabled: true,
   });
@@ -289,11 +289,23 @@ const ScheduleEditScreen: React.FC<ScheduleEditScreenProps> = ({ navigation, rou
             <Text style={styles.previewTitle}>👀 미리보기</Text>
             <View style={[styles.previewCard, { borderLeftColor: formData.color }]}>
               <Text style={styles.previewCardTitle}>{formData.title || '제목 미입력'}</Text>
+              {formData.subtitle ? (
+                <Text style={styles.previewCardSubtitle}>{formData.subtitle}</Text>
+              ) : (
+                <Text style={styles.previewCardSubtitle}>소제목 미입력</Text>
+              )}
+              {formData.description && (
+                <Text style={styles.previewCardDescription}>{formData.description}</Text>
+              )}
+              <Text style={styles.previewCardDate}>📅 {formData.scheduleDate}</Text>
               <Text style={styles.previewCardTime}>
                 {formData.startTime && formData.endTime 
-                  ? `${formData.startTime} - ${formData.endTime}`
-                  : '종일'
+                  ? `⏰ ${formData.startTime} - ${formData.endTime}`
+                  : '⏰ 종일'
                 }
+              </Text>
+              <Text style={styles.previewCardStudyTime}>
+                📚 학습 {formData.plannedStudyMinutes}분 / 휴식 {formData.plannedBreakMinutes}분
               </Text>
               {formData.studyGoal && (
                 <Text style={styles.previewCardGoal}>목표: {formData.studyGoal}</Text>
@@ -484,7 +496,29 @@ const styles = StyleSheet.create({
     color: theme.colors.text.primary,
     marginBottom: theme.spacing[2],
   },
+  previewCardSubtitle: {
+    fontSize: 15,
+    fontStyle: 'italic',
+    color: theme.colors.text.secondary,
+    marginBottom: theme.spacing[2],
+  },
+  previewCardDescription: {
+    fontSize: 14,
+    color: theme.colors.text.secondary,
+    marginBottom: theme.spacing[2],
+    lineHeight: 20,
+  },
+  previewCardDate: {
+    fontSize: 14,
+    color: theme.colors.text.secondary,
+    marginBottom: theme.spacing[1],
+  },
   previewCardTime: {
+    fontSize: 14,
+    color: theme.colors.text.secondary,
+    marginBottom: theme.spacing[1],
+  },
+  previewCardStudyTime: {
     fontSize: 14,
     color: theme.colors.text.secondary,
     marginBottom: theme.spacing[2],

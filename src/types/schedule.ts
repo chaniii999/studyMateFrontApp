@@ -18,6 +18,7 @@ export interface StudyTopic {
 // 스케줄 생성/수정 요청
 export interface ScheduleRequest {
   title: string;
+  subtitle?: string;   // 2. 소제목 (학습 범위) 추가
   description?: string;
   color?: string;
   scheduleDate: string; // YYYY-MM-DD 형식
@@ -40,6 +41,7 @@ export interface ScheduleRequest {
 export interface ScheduleResponse {
   id: string;
   title: string;
+  subtitle?: string;    // 2. 소제목 (학습 범위) 추가
   description?: string;
   color?: string;
   scheduleDate: string;

@@ -192,6 +192,10 @@ const ScheduleDetailScreen: React.FC<ScheduleDetailScreenProps> = ({ navigation,
           
           <Text style={styles.scheduleTitle}>{schedule.title}</Text>
           
+          {schedule.subtitle && (
+            <Text style={styles.subtitle}>{schedule.subtitle}</Text>
+          )}
+          
           {schedule.description && (
             <Text style={styles.description}>{schedule.description}</Text>
           )}
@@ -454,6 +458,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: theme.colors.text.primary,
     marginBottom: theme.spacing[2],
+  },
+  subtitle: {
+    fontSize: 16,
+    fontStyle: 'italic',
+    color: theme.colors.text.secondary,
+    marginBottom: theme.spacing[2],
+    lineHeight: 22,
   },
   description: {
     fontSize: 14,
