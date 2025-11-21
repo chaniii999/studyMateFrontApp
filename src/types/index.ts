@@ -6,6 +6,7 @@ export * from './schedule';
 export * from './aiFeedback';
 export * from './common';
 export * from './auth';
+export * from './studyGoal';
 
 // 주요 타입들을 다시 export하여 편의성 제공
 export type {
@@ -57,6 +58,16 @@ export type {
   MonthlyAIFeedback,
   GenerateAIFeedbackRequest,
 } from './aiFeedback';
+
+export type {
+  StudyGoalRequest,
+  StudyGoalResponse,
+  StudyGoalStatistics,
+  StudyGoalDashboard,
+  StudyGoalOption,
+  DailyStudyData,
+  GoalStatus,
+} from './studyGoal';
 
 export type {
   Statistics,

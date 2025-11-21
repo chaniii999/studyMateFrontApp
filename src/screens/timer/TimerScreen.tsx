@@ -8,7 +8,9 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 import { theme } from '../../theme';
 import apiClient from '../../services/apiClient';
 import { aiFeedbackService } from '../../services/aiFeedbackService';
+import { studyGoalService } from '../../services';
 import { AiFeedbackRequest } from '../../types/aiFeedback';
+import { StudyGoalResponse } from '../../types';
 import AiFeedbackSurvey, { AiFeedbackSurveyData } from '../../components/AiFeedbackSurvey';
 import { useRoute } from '@react-navigation/native';
 
@@ -55,6 +57,11 @@ const TimerScreen: React.FC = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [surveyVisible, setSurveyVisible] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  
+  // 학습목표 관련 상태
+  const [activeGoals, setActiveGoals] = useState<StudyGoalResponse[]>([]);
+  const [selectedGoalId, setSelectedGoalId] = useState<number | null>(null);
+  const [showGoalSelector, setShowGoalSelector] = useState(false);
   
   // 게이지바 애니메이션을 위한 Animated Value
   const gaugeAnimatedValue = useRef(new Animated.Value(0)).current;
@@ -151,6 +158,25 @@ const TimerScreen: React.FC = () => {
     duration?: number;
   }>>([]);
   
+  // 학습목표 로드
+  const loadActiveGoals = useCallback(async () => {
+    try {
+      const response = await studyGoalService.getActiveStudyGoals();
+      if (response.success && response.data) {
+        setActiveGoals(response.data);
+        console.log('활성 학습목표 로드 성공:', response.data.length, '개');
+      }
+    } catch (error) {
+      console.error('학습목표 로드 에러:', error);
+      setActiveGoals([]);
+    }
+  }, []);
+
+  // 컴포넌트 마운트 시 학습목표 로드
+  useEffect(() => {
+    loadActiveGoals();
+  }, [loadActiveGoals]);
+
   // 모드 히스토리에서 누적 시간 계산
   useEffect(() => {
     let studySeconds = 0;
@@ -689,15 +715,21 @@ const TimerScreen: React.FC = () => {
       summary,
     };
     
+    // 학습목표가 선택된 경우 URL에 추가
+    const saveUrl = selectedGoalId 
+      ? `/timer/save?studyGoalId=${selectedGoalId}` 
+      : '/timer/save';
+    
     const totalSessionSeconds = finalStudySeconds + finalRestSeconds;
     console.log('[타이머] 저장 요청:', {
       공부시간: `${finalStudySeconds}초 (${(finalStudySeconds / 60).toFixed(2)}분)`,
       휴식시간: `${finalRestSeconds}초 (${(finalRestSeconds / 60).toFixed(2)}분)`,
       총세션시간: `${totalSessionSeconds}초`,
-      모드: isStudy ? '공부' : '휴식'
+      모드: isStudy ? '공부' : '휴식',
+      선택된목표: selectedGoalId || '없음'
     });
     try {
-      const response = await apiClient.post('/timer/save', payload);
+      const response = await apiClient.post(saveUrl, payload);
       console.log('[타이머] 저장 완료:', response.success ? '성공' : '실패');
       if (response.success) {
         // 저장된 타이머 ID 저장
@@ -840,31 +872,72 @@ const TimerScreen: React.FC = () => {
         >
         <Text style={styles.nightCycleText}>{cycle}번째 사이클</Text>
       </Animated.View>
-      
-              {/* 누적 시간 표시 */}
-        {modeHistory.length > 0 && (
-          <Animated.View 
-            style={[
-              styles.nightAccumulatedTimeContainer,
-              { 
-                opacity: opacityAnimatedValue,
-                transform: [{ scale: scaleAnimatedValue }]
-              }
-            ]}
-          >
-            <View style={styles.timeStatRow}>
-              <Text style={styles.nightAccumulatedTimeText}>
-                누적 공부: {formatTime(totalStudySeconds)}
-              </Text>
-            </View>
-            <View style={styles.timeStatRow}>
-              <Text style={styles.nightAccumulatedTimeText}>
-                누적 휴식: {formatTime(totalRestSeconds)}
-              </Text>
-            </View>
 
-          </Animated.View>
+      {/* 학습목표 선택 */}
+      <Animated.View 
+        style={[
+          styles.goalSelector,
+          { 
+            opacity: opacityAnimatedValue,
+            transform: [{ scale: scaleAnimatedValue }]
+          }
+        ]}
+      >
+        <TouchableOpacity
+          style={styles.goalSelectorButton}
+          onPress={() => setShowGoalSelector(!showGoalSelector)}
+          activeOpacity={0.8}
+        >
+          <View style={styles.goalSelectorContent}>
+            <Text style={styles.goalSelectorLabel}>📚 학습목표</Text>
+            <Text style={styles.goalSelectorValue} numberOfLines={1}>
+              {selectedGoalId 
+                ? activeGoals.find(g => g.id === selectedGoalId)?.title || '선택됨'
+                : '선택하기'
+              }
+            </Text>
+            <Text style={styles.goalSelectorArrow}>
+              {showGoalSelector ? '▲' : '▼'}
+            </Text>
+          </View>
+        </TouchableOpacity>
+        
+        {showGoalSelector && (
+          <View style={styles.goalDropdown}>
+            <TouchableOpacity
+              style={[styles.goalOption, selectedGoalId === null && styles.selectedGoalOption]}
+              onPress={() => {
+                setSelectedGoalId(null);
+                setShowGoalSelector(false);
+              }}
+            >
+              <Text style={styles.goalOptionText}>목표 없이 공부</Text>
+            </TouchableOpacity>
+            {activeGoals.map((goal) => (
+              <TouchableOpacity
+                key={goal.id}
+                style={[styles.goalOption, selectedGoalId === goal.id && styles.selectedGoalOption]}
+                onPress={() => {
+                  setSelectedGoalId(goal.id);
+                  setShowGoalSelector(false);
+                }}
+              >
+                <View style={styles.goalOptionContent}>
+                  <View style={[styles.goalColorDot, { backgroundColor: goal.color || '#3B82F6' }]} />
+                  <View style={styles.goalOptionTextContainer}>
+                    <Text style={styles.goalOptionTitle} numberOfLines={1}>{goal.title}</Text>
+                    <Text style={styles.goalOptionSubject}>{goal.subject}</Text>
+                  </View>
+                  <Text style={styles.goalOptionProgress}>
+                    {Math.round(goal.progressRate)}%
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
         )}
+      </Animated.View>
+      
               {/* 타이머 영역은 고정 (애니메이션 없음) */}
           <View style={styles.nightTimerWrapper}>
                         <TouchableOpacity
@@ -918,6 +991,16 @@ const TimerScreen: React.FC = () => {
                   <Text style={styles.nightStatusTextIdle}>
                     시작을 눌러주세요
                   </Text>
+                )}
+                {modeHistory.length > 0 && (
+                  <View style={styles.accumulatedTimeInCircle}>
+                    <Text style={styles.accumulatedTimeInCircleText}>
+                      누적 공부: {formatTime(totalStudySeconds)}
+                    </Text>
+                    <Text style={styles.accumulatedTimeInCircleText}>
+                      누적 휴식: {formatTime(totalRestSeconds)}
+                    </Text>
+                  </View>
                 )}
               </View>
             </TouchableOpacity>
@@ -1287,9 +1370,9 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 25,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
     shadowColor: '#000',
@@ -1299,7 +1382,7 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   nightCycleText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: '#FFFFFF',
     textAlign: 'center',
@@ -1367,6 +1450,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 15,
     elevation: 15,
+    paddingBottom: 20,
   },
   nightTimeText: {
     fontSize: 36,
@@ -1393,6 +1477,19 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
     fontStyle: 'italic',
+  },
+  accumulatedTimeInCircle: {
+    marginTop: 12,
+    alignItems: 'center',
+    gap: 4,
+  },
+  accumulatedTimeInCircleText: {
+    fontSize: 11,
+    color: 'rgba(255, 255, 255, 0.75)',
+    fontWeight: '500',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   nightButtonRow: {
     flexDirection: 'row',
@@ -1521,6 +1618,109 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     zIndex: -1,
+  },
+  // 학습목표 선택 관련 스타일
+  goalSelector: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 140 : 120,
+    left: 20,
+    right: 20,
+    zIndex: 10,
+  },
+  goalSelectorButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  goalSelectorContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  goalSelectorLabel: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+    marginRight: 12,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  goalSelectorValue: {
+    flex: 1,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 14,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
+  },
+  goalSelectorArrow: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 12,
+    marginLeft: 8,
+  },
+  goalDropdown: {
+    backgroundColor: 'rgba(30, 30, 30, 0.95)',
+    borderRadius: 12,
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 12,
+    maxHeight: 200,
+  },
+  goalOption: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  selectedGoalOption: {
+    backgroundColor: 'rgba(59, 130, 246, 0.3)',
+  },
+  goalOptionText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  goalOptionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  goalColorDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 12,
+  },
+  goalOptionTextContainer: {
+    flex: 1,
+  },
+  goalOptionTitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  goalOptionSubject: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 12,
+  },
+  goalOptionProgress: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 8,
   },
 });
 

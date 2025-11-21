@@ -3,12 +3,13 @@ import { View, Text, StyleSheet, ScrollView, Dimensions, StatusBar } from 'react
 import Card from '../components/common/Card';
 import Button from '../components/common/Button';
 import DreamyNightBackground from '../components/common/DreamyNightBackground';
+import { StudyGoalCard, StudyGoalCreateModal } from '../components';
 import { theme } from '../theme';
 import { useNavigation } from '@react-navigation/native';
 import { MainTabParamList } from '../navigation/types';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import { scheduleService } from '../services/scheduleService';
-import { ScheduleResponse } from '../types/schedule';
+import { scheduleService, studyGoalService } from '../services';
+import { ScheduleResponse, StudyGoalResponse } from '../types';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import apiClient from '../services/apiClient';
@@ -32,6 +33,10 @@ const HomeScreen: React.FC = () => {
   const [todayStudyTime, setTodayStudyTime] = useState(0); // 분 단위
   const [weekStudyTime, setWeekStudyTime] = useState(0); // 분 단위
   const [loading, setLoading] = useState(true);
+  
+  // 학습목표 관련 상태
+  const [activeGoals, setActiveGoals] = useState<StudyGoalResponse[]>([]);
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // 오늘 날짜
   const today = format(new Date(), 'yyyy-MM-dd');
@@ -49,6 +54,20 @@ const HomeScreen: React.FC = () => {
       console.error('오늘 스케줄 로드 에러:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 학습목표 로드
+  const loadActiveGoals = async () => {
+    try {
+      const response = await studyGoalService.getActiveStudyGoals();
+      if (response.success && response.data) {
+        setActiveGoals(response.data);
+        console.log('활성 학습목표 로드 성공:', response.data.length, '개');
+      }
+    } catch (error) {
+      console.error('학습목표 로드 에러:', error);
+      setActiveGoals([]);
     }
   };
 
@@ -206,9 +225,15 @@ const HomeScreen: React.FC = () => {
     return time.substring(0, 5);
   };
 
+  // 학습목표 생성 완료 핸들러
+  const handleGoalCreated = () => {
+    loadActiveGoals(); // 목표 목록 다시 로드
+  };
+
   useEffect(() => {
     loadTodaySchedules();
     loadHomeStats(); // 기존 calculateTodayStudyTime 대신 새로운 API 사용
+    loadActiveGoals(); // 학습목표 로드
   }, []);
 
   return (
@@ -228,6 +253,54 @@ const HomeScreen: React.FC = () => {
         <Card style={styles.studyTimeCard} elevation="lg" borderRadius="lg">
           <Text style={styles.studyTimeTitle}>오늘의 총 공부시간</Text>
           <Text style={styles.studyTimeValue}>{formatStudyTime(todayStudyTime)}</Text>
+        </Card>
+
+        {/* 학습목표 섹션 */}
+        <Card style={styles.card} elevation="md" borderRadius="md">
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>📚 진행 중인 학습목표</Text>
+            <Button
+              title="+ 새 목표"
+              onPress={() => setShowCreateModal(true)}
+              size="sm"
+              variant="outline"
+            />
+          </View>
+          
+          {activeGoals.length > 0 ? (
+            <View>
+              {activeGoals.slice(0, 2).map((goal) => (
+                <StudyGoalCard
+                  key={goal.id}
+                  goal={goal}
+                  onPress={() => {
+                    // TODO: 학습목표 상세 화면으로 이동
+                    console.log('학습목표 선택:', goal.title);
+                  }}
+                />
+              ))}
+              {activeGoals.length > 2 && (
+                <Button
+                  title={`+${activeGoals.length - 2}개 더 보기`}
+                  onPress={() => {
+                    // TODO: 전체 학습목표 목록 화면으로 이동
+                    console.log('전체 학습목표 보기');
+                  }}
+                  variant="ghost"
+                  size="sm"
+                />
+              )}
+            </View>
+          ) : (
+            <View style={styles.emptyGoalsContainer}>
+              <Text style={styles.emptyGoalsText}>
+                아직 설정된 학습목표가 없습니다.
+              </Text>
+              <Text style={styles.emptyGoalsSubtext}>
+                새로운 목표를 만들어 체계적으로 공부해보세요!
+              </Text>
+            </View>
+          )}
         </Card>
 
         {/* 오늘 스케줄 */}
@@ -288,21 +361,14 @@ const HomeScreen: React.FC = () => {
           />
         </Card>
 
-        {/* 학습 목표 */}
-        <Card style={styles.card} elevation="md" borderRadius="md">
-          <Text style={styles.cardTitle}>학습 목표</Text>
-          <Text style={styles.cardContent}>매일 조금씩 꾸준히 성장하세요.</Text>
-          <Button 
-            title="목표 설정" 
-            onPress={() => {
-              // TODO: 목표 설정 화면으로 이동
-            }} 
-            size="sm" 
-            style={styles.button} 
-            variant="outline" 
-          />
-        </Card>
       </ScrollView>
+
+      {/* 학습목표 생성 모달 */}
+      <StudyGoalCreateModal
+        visible={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreated={handleGoalCreated}
+      />
     </View>
   );
 };
@@ -361,6 +427,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
   },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -404,6 +476,23 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 8,
+  },
+  // 학습목표 관련 스타일
+  emptyGoalsContainer: {
+    alignItems: 'center',
+    paddingVertical: 24,
+  },
+  emptyGoalsText: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyGoalsSubtext: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.6)',
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
 

@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, Alert, StatusBar, ScrollView } from 'react-native';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import DreamyNightBackground from '../../components/common/DreamyNightBackground';
 import { theme } from '../../theme';
 import apiClient from '../../services/apiClient';
 import { aiFeedbackService } from '../../services/aiFeedbackService';
+import { studyGoalService } from '../../services';
 import { StudySessionSummary, AiFeedbackRequest } from '../../types/aiFeedback';
+import { StudyGoalResponse } from '../../types';
 import AiFeedbackSurvey, { AiFeedbackSurveyData } from '../../components/AiFeedbackSurvey';
 import { useFocusEffect } from '@react-navigation/native';
 import { timerService } from '../../services';
@@ -28,29 +30,64 @@ interface TimerRecord {
 const StatisticsScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [records, setRecords] = useState<TimerRecord[]>([]);
+  const [filteredRecords, setFilteredRecords] = useState<TimerRecord[]>([]);
   const [aiLoading, setAiLoading] = useState<number | null>(null);
   const [surveyVisible, setSurveyVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<TimerRecord | null>(null);
   const [expandedFeedback, setExpandedFeedback] = useState<Set<number>>(new Set());
+  
+  // 학습목표 필터링 관련 상태
+  const [activeGoals, setActiveGoals] = useState<StudyGoalResponse[]>([]);
+  const [selectedGoalId, setSelectedGoalId] = useState<number | null>(null);
+  const [showGoalFilter, setShowGoalFilter] = useState(false);
+
+  // 학습목표 로드
+  const loadActiveGoals = async () => {
+    try {
+      const response = await studyGoalService.getActiveStudyGoals();
+      if (response.success && response.data) {
+        setActiveGoals(response.data);
+      }
+    } catch (error) {
+      console.error('학습목표 로드 에러:', error);
+      setActiveGoals([]);
+    }
+  };
+
+  // 필터링 적용
+  const applyFilter = (goalId: number | null, recordsList: TimerRecord[]) => {
+    if (goalId === null) {
+      setFilteredRecords(recordsList);
+    } else {
+      // TODO: 백엔드에서 학습목표별 타이머 기록 조회 API 구현 후 사용
+      // 현재는 전체 기록 표시
+      setFilteredRecords(recordsList);
+    }
+  };
 
   useFocusEffect(
     React.useCallback(() => {
       setLoading(true);
+      loadActiveGoals(); // 학습목표 로드
+      
       apiClient.get('/timer/history')
         .then(data => {
           if (data.success) {
             setRecords(data.data);
+            applyFilter(selectedGoalId, data.data);
             
             // 기존 AI 피드백이 있는 기록들의 세션 요약 정보 로드
             const recordsWithAiFeedback = data.data.filter((record: TimerRecord) => record.aiFeedback);
             recordsWithAiFeedback.forEach(async (record: TimerRecord) => {
               try {
                 const existingFeedback = await aiFeedbackService.getExistingFeedback(record.id);
-                setRecords(prev => prev.map(item => 
-                  item.id === record.id 
+                setRecords(prev => {
+                  return prev.map(item => 
+                    item.id === record.id 
                     ? { ...item, sessionSummary: existingFeedback.sessionSummary }
                     : item
-                ));
+                  );
+                });
               } catch (error) {
                 // 세션 요약 로드 실패 시 조용히 처리
               }
@@ -61,8 +98,13 @@ const StatisticsScreen: React.FC = () => {
           console.error('기록 조회 에러:', err);
         })
         .finally(() => setLoading(false));
-    }, [])
+    }, [selectedGoalId])
   );
+
+  // 학습목표 필터 변경 시 필터링 적용
+  useEffect(() => {
+    applyFilter(selectedGoalId, records);
+  }, [selectedGoalId, records]);
 
   const formatTime = (sec: number) => {
     // 비정상적으로 큰 값 처리 (예: 9000초 = 2.5시간이면 150초 = 2.5분으로 변환)
@@ -317,13 +359,68 @@ const StatisticsScreen: React.FC = () => {
       
       <View style={styles.container}>
         <Text style={styles.title}>타이머 기록 통계</Text>
+        
+        {/* 학습목표 필터 */}
+        <View style={styles.filterContainer}>
+          <TouchableOpacity
+            style={styles.filterButton}
+            onPress={() => setShowGoalFilter(!showGoalFilter)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.filterLabel}>📊 필터</Text>
+            <Text style={styles.filterValue} numberOfLines={1}>
+              {selectedGoalId 
+                ? activeGoals.find(g => g.id === selectedGoalId)?.title || '선택됨'
+                : '전체 기록'
+              }
+            </Text>
+            <Text style={styles.filterArrow}>
+              {showGoalFilter ? '▲' : '▼'}
+            </Text>
+          </TouchableOpacity>
+          
+          {showGoalFilter && (
+            <View style={styles.filterDropdown}>
+              <TouchableOpacity
+                style={[styles.filterOption, selectedGoalId === null && styles.selectedFilterOption]}
+                onPress={() => {
+                  setSelectedGoalId(null);
+                  setShowGoalFilter(false);
+                }}
+              >
+                <Text style={styles.filterOptionText}>전체 기록 보기</Text>
+              </TouchableOpacity>
+              {activeGoals.map((goal) => (
+                <TouchableOpacity
+                  key={goal.id}
+                  style={[styles.filterOption, selectedGoalId === goal.id && styles.selectedFilterOption]}
+                  onPress={() => {
+                    setSelectedGoalId(goal.id);
+                    setShowGoalFilter(false);
+                  }}
+                >
+                  <View style={styles.filterOptionContent}>
+                    <View style={[styles.goalColorDot, { backgroundColor: goal.color || '#3B82F6' }]} />
+                    <View style={styles.filterOptionTextContainer}>
+                      <Text style={styles.filterOptionTitle} numberOfLines={1}>{goal.title}</Text>
+                      <Text style={styles.filterOptionSubject}>{goal.subject}</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+        
         {loading ? (
           <ActivityIndicator size="large" color="#FFFFFF" style={{ marginTop: 40 }} />
-        ) : records.length === 0 ? (
-          <Text style={styles.emptyText}>아직 기록이 없습니다.</Text>
+        ) : filteredRecords.length === 0 ? (
+          <Text style={styles.emptyText}>
+            {selectedGoalId ? '해당 학습목표의 기록이 없습니다.' : '아직 기록이 없습니다.'}
+          </Text>
         ) : (
           <FlatList
-            data={records}
+            data={filteredRecords}
             renderItem={renderItem}
             keyExtractor={item => item.id.toString()}
             contentContainerStyle={styles.listContainer}
@@ -557,6 +654,97 @@ const styles = StyleSheet.create({
   deleteButtonText: {
     fontSize: 18,
     color: '#FFFFFF',
+  },
+  // 학습목표 필터 관련 스타일
+  filterContainer: {
+    marginBottom: 16,
+  },
+  filterButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.25)',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  filterLabel: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+    marginRight: 12,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  filterValue: {
+    flex: 1,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 14,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 1,
+  },
+  filterArrow: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 12,
+    marginLeft: 8,
+  },
+  filterDropdown: {
+    backgroundColor: 'rgba(30, 30, 30, 0.95)',
+    borderRadius: 12,
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 12,
+    maxHeight: 200,
+  },
+  filterOption: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  selectedFilterOption: {
+    backgroundColor: 'rgba(59, 130, 246, 0.3)',
+  },
+  filterOptionText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  filterOptionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  goalColorDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 12,
+  },
+  filterOptionTextContainer: {
+    flex: 1,
+  },
+  filterOptionTitle: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  filterOptionSubject: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 12,
   },
 });
 
