@@ -5,6 +5,7 @@ export { timerService } from './timerService';
 export { studyTopicService } from './studyTopicService';
 export { aiFeedbackService } from './aiFeedbackService';
 export { studyGoalService } from './studyGoalService';
+export { scheduleService } from './scheduleService';
 
 // 서비스 타입들 (필요시)
 export type { ApiClient } from './apiClient'; 

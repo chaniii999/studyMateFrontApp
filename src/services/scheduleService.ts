@@ -95,10 +95,13 @@ export const scheduleService = {
   // === 상태 관리 ===
 
   // 스케줄 상태 변경
+  // 백엔드 API: PUT /api/schedule/{scheduleId}/status?status={status}
   async updateScheduleStatus(scheduleId: string, status: ScheduleStatus): Promise<ScheduleResponse> {
-    const response = await apiClient.patch<ScheduleResponse>(`/schedule/${scheduleId}/status`, { status });
-    if (!response.data) {
-      throw new Error('스케줄 상태 변경에 실패했습니다.');
+    // 쿼리 파라미터로 status 전달 (URL 인코딩 포함)
+    const encodedStatus = encodeURIComponent(status);
+    const response = await apiClient.put<ScheduleResponse>(`/schedule/${scheduleId}/status?status=${encodedStatus}`);
+    if (!response.success || !response.data) {
+      throw new Error(response.message || '스케줄 상태 변경에 실패했습니다.');
     }
     return response.data;
   },

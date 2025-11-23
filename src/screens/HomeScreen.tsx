@@ -45,13 +45,12 @@ const HomeScreen: React.FC = () => {
   const loadTodaySchedules = async () => {
     try {
       setLoading(true);
-      const allSchedules = await scheduleService.getAllSchedules();
-      const todaySchedules = allSchedules.filter(schedule => 
-        schedule.scheduleDate === today
-      );
+      // 백엔드의 /api/schedule/today API를 직접 사용
+      const todaySchedules = await scheduleService.getTodaySchedules();
       setTodaySchedules(todaySchedules);
     } catch (error) {
       console.error('오늘 스케줄 로드 에러:', error);
+      setTodaySchedules([]); // 에러 시 빈 배열로 설정
     } finally {
       setLoading(false);
     }
