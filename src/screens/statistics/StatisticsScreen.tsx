@@ -70,9 +70,34 @@ const StatisticsScreen: React.FC = () => {
       setLoading(true);
       loadActiveGoals(); // 학습목표 로드
       
+      console.log('[통계] 타이머 기록 조회 시작');
       apiClient.get('/timer/history')
         .then(data => {
-          if (data.success) {
+          console.log('[통계] 타이머 기록 조회 응답:', {
+            success: data.success,
+            message: data.message,
+            dataLength: data.data?.length || 0,
+            rawData: data.data
+          });
+          
+          if (data.success && data.data) {
+            // 각 기록의 상세 정보 로그
+            console.log('[통계] 기록 상세 정보:');
+            data.data.forEach((record: TimerRecord, index: number) => {
+              console.log(`[통계] 기록 ${index + 1}:`, {
+                id: record.id,
+                startTime: record.startTime,
+                endTime: record.endTime,
+                studyTime: record.studyTime,
+                restTime: record.restTime,
+                studyTimeType: typeof record.studyTime,
+                restTimeType: typeof record.restTime,
+                mode: record.mode,
+                summary: record.summary,
+                전체객체: record
+              });
+            });
+            
             setRecords(data.data);
             applyFilter(selectedGoalId, data.data);
             
@@ -92,10 +117,12 @@ const StatisticsScreen: React.FC = () => {
                 // 세션 요약 로드 실패 시 조용히 처리
               }
             });
+          } else {
+            console.warn('[통계] 타이머 기록 조회 실패 또는 데이터 없음:', data);
           }
         })
         .catch((err) => {
-          console.error('기록 조회 에러:', err);
+          console.error('[통계] 기록 조회 에러:', err);
         })
         .finally(() => setLoading(false));
     }, [selectedGoalId])
@@ -311,20 +338,44 @@ const StatisticsScreen: React.FC = () => {
     if (!selectedRecord) return;
 
     try {
+      // 백엔드 요구사항: 최소 3분(180초) 이상의 학습 시간 필요
+      const studyTimeSeconds = selectedRecord.studyTime || 0;
+      if (studyTimeSeconds < 180) {
+        const studyMinutes = Math.floor(studyTimeSeconds / 60);
+        const studySeconds = studyTimeSeconds % 60;
+        Alert.alert(
+          'AI 피드백 요청 불가',
+          `학습 시간이 너무 짧습니다.\n\n현재 학습 시간: ${studyMinutes}분 ${studySeconds}초\n최소 필요 시간: 3분 이상\n\n최소 3분 이상 학습한 후 AI 피드백을 요청해주세요.`
+        );
+        return;
+      }
+
       setAiLoading(selectedRecord.id);
       setSurveyVisible(false);
+      
+      console.log('[통계] AI 피드백 요청 시작:', {
+        recordId: selectedRecord.id,
+        studyTime: selectedRecord.studyTime,
+        restTime: selectedRecord.restTime,
+        studyTimeMinutes: Math.floor(studyTimeSeconds / 60),
+        surveyData
+      });
       
       const request: AiFeedbackRequest = {
         timerId: selectedRecord.id,
         studySummary: selectedRecord.summary || '학습 기록',
-        studyTime: selectedRecord.studyTime || 0, // 초 단위로 직접 전송
+        studyTime: studyTimeSeconds, // 초 단위로 직접 전송
         restTime: selectedRecord.restTime || 0,   // 초 단위로 직접 전송
         mode: selectedRecord.mode || '25/5',
         // 설문조사 데이터 추가
         ...surveyData
       };
 
+      console.log('[통계] AI 피드백 요청 데이터:', request);
+
       const feedback = await aiFeedbackService.createFeedback(request);
+      
+      console.log('[통계] AI 피드백 응답 수신:', feedback);
       
       // 기록 목록 업데이트 (새로운 응답 구조 반영)
       setRecords(prev => prev.map(item => 
@@ -340,9 +391,86 @@ const StatisticsScreen: React.FC = () => {
       ));
 
       Alert.alert('AI 피드백 완료', 'AI 피드백이 생성되었습니다!');
-    } catch (error) {
-      console.error('AI 피드백 생성 에러:', error);
-      Alert.alert('오류', 'AI 피드백 생성에 실패했습니다.');
+    } catch (error: any) {
+      console.error('[통계] AI 피드백 생성 에러:', {
+        message: error?.message,
+        code: error?.code,
+        details: error?.details,
+        response: error?.response,
+        request: error?.request,
+        stack: error?.stack
+      });
+      
+      // 네트워크 에러나 타임아웃인 경우, 백엔드에서 이미 처리되었을 수 있으므로
+      // 기존 피드백이 있는지 확인
+      if (error?.code === 'NETWORK_ERROR' || error?.code === 'REQUEST_ERROR' || error?.message?.includes('timeout')) {
+        console.log('[통계] 네트워크/타임아웃 에러 - 기존 피드백 확인 시도');
+        try {
+          const existingFeedback = await aiFeedbackService.getExistingFeedback(selectedRecord.id);
+          console.log('[통계] 기존 피드백 발견, 기록 업데이트');
+          
+          // 기록 목록 업데이트
+          setRecords(prev => prev.map(item => 
+            item.id === selectedRecord.id 
+              ? { 
+                  ...item, 
+                  aiFeedback: existingFeedback.feedback, 
+                  aiSuggestions: existingFeedback.suggestions, 
+                  aiMotivation: existingFeedback.motivation,
+                  sessionSummary: existingFeedback.sessionSummary
+                }
+              : item
+          ));
+          
+          Alert.alert('AI 피드백 완료', 'AI 피드백이 생성되었습니다!');
+          return; // 성공적으로 처리되었으므로 종료
+        } catch (checkError) {
+          console.log('[통계] 기존 피드백 없음:', checkError);
+          // 기존 피드백이 없으면 원래 에러 메시지 표시
+        }
+      }
+      
+      // 에러 메시지 추출
+      let errorMessage = 'AI 피드백 생성에 실패했습니다.';
+      if (error && typeof error === 'object') {
+        if (error.message) {
+          errorMessage = error.message;
+        } else if (error.code) {
+          switch (error.code) {
+            case 'NETWORK_ERROR':
+              errorMessage = '네트워크 연결을 확인해주세요. 잠시 후 다시 시도해주세요.';
+              break;
+            case 'BAD_REQUEST':
+              errorMessage = error.message || '잘못된 요청입니다.';
+              break;
+            case 'UNAUTHORIZED':
+              errorMessage = '인증이 필요합니다.';
+              break;
+            case 'FORBIDDEN':
+              errorMessage = '권한이 없습니다.';
+              break;
+            case 'NOT_FOUND':
+              errorMessage = '타이머 기록을 찾을 수 없습니다.';
+              break;
+            case 'SERVER_ERROR':
+              errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+              break;
+            default:
+              errorMessage = error.message || 'AI 피드백 생성에 실패했습니다.';
+          }
+        }
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      // 백엔드 에러 메시지 확인 (특정 에러 케이스)
+      if (errorMessage.includes('학습 시간이 3분 미만')) {
+        errorMessage = '학습 시간이 너무 짧습니다. 최소 3분 이상 학습한 후 AI 피드백을 요청해주세요.';
+      } else if (errorMessage.includes('사용량이 초과')) {
+        errorMessage = 'AI 서비스 사용량이 초과되었습니다. 잠시 후 다시 시도해주세요.';
+      }
+      
+      Alert.alert('오류', errorMessage);
     } finally {
       setAiLoading(null);
       setSelectedRecord(null);

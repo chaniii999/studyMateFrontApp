@@ -177,24 +177,52 @@ const TimerScreen: React.FC = () => {
     loadActiveGoals();
   }, [loadActiveGoals]);
 
-  // 모드 히스토리에서 누적 시간 계산
+  // 모드 히스토리에서 누적 시간 계산 (실행 중인 시간 포함)
   useEffect(() => {
-    let studySeconds = 0;
-    let restSeconds = 0;
-    
-    modeHistory.forEach(record => {
-      if (record.duration) {
-        if (record.mode === 'study') {
-          studySeconds += record.duration;
-        } else {
-          restSeconds += record.duration;
+    const calculateAccumulatedTime = () => {
+      let studySeconds = 0;
+      let restSeconds = 0;
+      
+      modeHistory.forEach((record, index) => {
+        if (record.duration) {
+          // 완료된 기록
+          if (record.mode === 'study') {
+            studySeconds += record.duration;
+          } else {
+            restSeconds += record.duration;
+          }
+        } else if (isRunning && index === modeHistory.length - 1) {
+          // 마지막 기록이고 타이머가 실행 중인 경우 - 현재 진행 중인 시간 계산
+          const now = new Date();
+          const currentDuration = Math.floor((now.getTime() - record.startTime.getTime()) / 1000);
+          
+          if (record.mode === 'study') {
+            studySeconds += currentDuration;
+          } else {
+            restSeconds += currentDuration;
+          }
         }
-      }
-    });
-    
-    setTotalStudySeconds(studySeconds);
-    setTotalRestSeconds(restSeconds);
-  }, [modeHistory]);
+      });
+      
+      setTotalStudySeconds(studySeconds);
+      setTotalRestSeconds(restSeconds);
+    };
+
+    // 즉시 계산
+    calculateAccumulatedTime();
+
+    // 타이머가 실행 중일 때는 1초마다 재계산하여 실시간 업데이트
+    let interval: NodeJS.Timeout | undefined;
+    if (isRunning && modeHistory.length > 0) {
+      interval = setInterval(() => {
+        calculateAccumulatedTime();
+      }, 1000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [modeHistory, isRunning]);
   
 
 
@@ -707,8 +735,8 @@ const TimerScreen: React.FC = () => {
     const mode = `${studyMinutes}/${breakMinutes}`; // 포모도로 모드
     const summary = '';
     const payload = {
-      studyTimes: finalStudySeconds, // 초 단위로 직접 전송
-      restTimes: finalRestSeconds,   // 초 단위로 직접 전송
+      studyTime: finalStudySeconds, // 초 단위로 직접 전송 (백엔드 필드명: studyTime)
+      restTime: finalRestSeconds,   // 초 단위로 직접 전송 (백엔드 필드명: restTime)
       startTime: startTime.toISOString(),
       endTime: endTime.toISOString(),
       mode,
@@ -722,6 +750,8 @@ const TimerScreen: React.FC = () => {
     
     const totalSessionSeconds = finalStudySeconds + finalRestSeconds;
     console.log('[타이머] 저장 요청:', {
+      URL: saveUrl,
+      payload: payload,
       공부시간: `${finalStudySeconds}초 (${(finalStudySeconds / 60).toFixed(2)}분)`,
       휴식시간: `${finalRestSeconds}초 (${(finalRestSeconds / 60).toFixed(2)}분)`,
       총세션시간: `${totalSessionSeconds}초`,
@@ -730,7 +760,12 @@ const TimerScreen: React.FC = () => {
     });
     try {
       const response = await apiClient.post(saveUrl, payload);
-      console.log('[타이머] 저장 완료:', response.success ? '성공' : '실패');
+      console.log('[타이머] 저장 응답:', {
+        success: response.success,
+        message: response.message,
+        data: response.data,
+        전체응답: response
+      });
       if (response.success) {
         // 저장된 타이머 ID 저장
         if (response.data && response.data.id) {
