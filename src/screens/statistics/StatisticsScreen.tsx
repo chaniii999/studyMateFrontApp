@@ -70,34 +70,9 @@ const StatisticsScreen: React.FC = () => {
       setLoading(true);
       loadActiveGoals(); // 학습목표 로드
       
-      console.log('[통계] 타이머 기록 조회 시작');
       apiClient.get('/timer/history')
         .then(data => {
-          console.log('[통계] 타이머 기록 조회 응답:', {
-            success: data.success,
-            message: data.message,
-            dataLength: data.data?.length || 0,
-            rawData: data.data
-          });
-          
           if (data.success && data.data) {
-            // 각 기록의 상세 정보 로그
-            console.log('[통계] 기록 상세 정보:');
-            data.data.forEach((record: TimerRecord, index: number) => {
-              console.log(`[통계] 기록 ${index + 1}:`, {
-                id: record.id,
-                startTime: record.startTime,
-                endTime: record.endTime,
-                studyTime: record.studyTime,
-                restTime: record.restTime,
-                studyTimeType: typeof record.studyTime,
-                restTimeType: typeof record.restTime,
-                mode: record.mode,
-                summary: record.summary,
-                전체객체: record
-              });
-            });
-            
             setRecords(data.data);
             applyFilter(selectedGoalId, data.data);
             
@@ -282,8 +257,24 @@ const StatisticsScreen: React.FC = () => {
   };
 
   const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+    if (!dateStr) return '시간 정보 없음';
+    
+    try {
+      // 백엔드에서 반환하는 시간을 로컬 시간대로 변환
+      const d = new Date(dateStr);
+      
+      // 유효한 날짜인지 확인
+      if (isNaN(d.getTime())) {
+        console.warn('[통계] 잘못된 날짜 형식:', dateStr);
+        return dateStr; // 원본 반환
+      }
+      
+      // 로컬 시간대로 포맷팅
+      return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')} ${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+    } catch (error) {
+      console.error('[통계] 날짜 포맷팅 에러:', error, dateStr);
+      return dateStr; // 원본 반환
+    }
   };
 
   const handleAiFeedback = async (record: TimerRecord) => {
@@ -392,22 +383,13 @@ const StatisticsScreen: React.FC = () => {
 
       Alert.alert('AI 피드백 완료', 'AI 피드백이 생성되었습니다!');
     } catch (error: any) {
-      console.error('[통계] AI 피드백 생성 에러:', {
-        message: error?.message,
-        code: error?.code,
-        details: error?.details,
-        response: error?.response,
-        request: error?.request,
-        stack: error?.stack
-      });
+      console.error('AI 피드백 생성 에러:', error?.message);
       
       // 네트워크 에러나 타임아웃인 경우, 백엔드에서 이미 처리되었을 수 있으므로
       // 기존 피드백이 있는지 확인
       if (error?.code === 'NETWORK_ERROR' || error?.code === 'REQUEST_ERROR' || error?.message?.includes('timeout')) {
-        console.log('[통계] 네트워크/타임아웃 에러 - 기존 피드백 확인 시도');
         try {
           const existingFeedback = await aiFeedbackService.getExistingFeedback(selectedRecord.id);
-          console.log('[통계] 기존 피드백 발견, 기록 업데이트');
           
           // 기록 목록 업데이트
           setRecords(prev => prev.map(item => 
@@ -425,7 +407,6 @@ const StatisticsScreen: React.FC = () => {
           Alert.alert('AI 피드백 완료', 'AI 피드백이 생성되었습니다!');
           return; // 성공적으로 처리되었으므로 종료
         } catch (checkError) {
-          console.log('[통계] 기존 피드백 없음:', checkError);
           // 기존 피드백이 없으면 원래 에러 메시지 표시
         }
       }

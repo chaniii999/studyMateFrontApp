@@ -685,13 +685,12 @@ const TimerScreen: React.FC = () => {
 
   // 공부 종료 및 저장
   const handleFinishAndSave = async () => {
-    console.log('[타이머] 공부 종료 버튼 클릭');
     if (!startTime) {
       Alert.alert('알림', '타이머를 먼저 시작하세요.');
-      console.log('[타이머] startTime 없음');
       return;
     }
     
+    // 기기의 현재 시간 사용
     const endTime = new Date();
     
     // modeHistory를 기반으로 정확한 공부/휴식 시간 계산
@@ -719,13 +718,6 @@ const TimerScreen: React.FC = () => {
       }
     });
     
-    console.log('[타이머] 모드 히스토리 분석:', {
-      총기록수: updatedModeHistory.length,
-      각기록: updatedModeHistory.map(r => `${r.mode}: ${r.duration}초`),
-      계산된공부시간: finalStudySeconds,
-      계산된휴식시간: finalRestSeconds
-    });
-    
     // 최소 1초 이상의 시간이 있어야 저장
     if (finalStudySeconds === 0 && finalRestSeconds === 0) {
       Alert.alert('알림', '최소 1초 이상의 시간을 기록해주세요.');
@@ -734,11 +726,25 @@ const TimerScreen: React.FC = () => {
     
     const mode = `${studyMinutes}/${breakMinutes}`; // 포모도로 모드
     const summary = '';
+    
+    // 기기의 현재 시간을 ISO 문자열로 변환 (로컬 시간대 정보 포함)
+    // toISOString()은 UTC로 변환하므로, 로컬 시간대 정보를 유지하기 위해 
+    // YYYY-MM-DDTHH:mm:ss 형식으로 직접 포맷팅
+    const formatLocalDateTime = (date: Date): string => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+      return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+    };
+    
     const payload = {
       studyTime: finalStudySeconds, // 초 단위로 직접 전송 (백엔드 필드명: studyTime)
       restTime: finalRestSeconds,   // 초 단위로 직접 전송 (백엔드 필드명: restTime)
-      startTime: startTime.toISOString(),
-      endTime: endTime.toISOString(),
+      startTime: formatLocalDateTime(startTime), // 기기 로컬 시간
+      endTime: formatLocalDateTime(endTime),    // 기기 로컬 시간
       mode,
       summary,
     };
@@ -748,24 +754,8 @@ const TimerScreen: React.FC = () => {
       ? `/timer/save?studyGoalId=${selectedGoalId}` 
       : '/timer/save';
     
-    const totalSessionSeconds = finalStudySeconds + finalRestSeconds;
-    console.log('[타이머] 저장 요청:', {
-      URL: saveUrl,
-      payload: payload,
-      공부시간: `${finalStudySeconds}초 (${(finalStudySeconds / 60).toFixed(2)}분)`,
-      휴식시간: `${finalRestSeconds}초 (${(finalRestSeconds / 60).toFixed(2)}분)`,
-      총세션시간: `${totalSessionSeconds}초`,
-      모드: isStudy ? '공부' : '휴식',
-      선택된목표: selectedGoalId || '없음'
-    });
     try {
       const response = await apiClient.post(saveUrl, payload);
-      console.log('[타이머] 저장 응답:', {
-        success: response.success,
-        message: response.message,
-        data: response.data,
-        전체응답: response
-      });
       if (response.success) {
         // 저장된 타이머 ID 저장
         if (response.data && response.data.id) {
@@ -784,7 +774,7 @@ const TimerScreen: React.FC = () => {
         Alert.alert('저장 실패', response.message || '저장에 실패했습니다.');
       }
     } catch (e) {
-      console.log('[타이머] 저장 실패:', e);
+      console.error('타이머 저장 실패:', e);
       Alert.alert('오류', '서버와 통신에 실패했습니다.');
     }
   };
