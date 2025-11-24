@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Easing, Alert, Platform, Vibration, Dimensions, ImageBackground } from 'react-native';
+import { Audio } from 'expo-av';
 
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Svg, { Circle } from 'react-native-svg';
@@ -57,6 +58,9 @@ const TimerScreen: React.FC = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [surveyVisible, setSurveyVisible] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  
+  // 오디오 사운드 객체
+  const soundRef = useRef<Audio.Sound | null>(null);
   
   // 학습목표 관련 상태
   const [activeGoals, setActiveGoals] = useState<StudyGoalResponse[]>([]);
@@ -177,6 +181,22 @@ const TimerScreen: React.FC = () => {
     loadActiveGoals();
   }, [loadActiveGoals]);
 
+  // 오디오 모드 설정 (컴포넌트 마운트 시)
+  useEffect(() => {
+    Audio.setAudioModeAsync({
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+      shouldDuckAndroid: true,
+    });
+    
+    // 컴포넌트 언마운트 시 사운드 정리
+    return () => {
+      if (soundRef.current) {
+        soundRef.current.unloadAsync().catch(() => {});
+      }
+    };
+  }, []);
+
   // 모드 히스토리에서 누적 시간 계산 (실행 중인 시간 포함)
   useEffect(() => {
     const calculateAccumulatedTime = () => {
@@ -224,23 +244,56 @@ const TimerScreen: React.FC = () => {
     };
   }, [modeHistory, isRunning]);
 
-  // 효과음 재생 함수 (Enter 키 느낌의 진동 패턴)
-  const playNotificationSound = useCallback(() => {
+  // 효과음 재생 함수 (타이머 모드 변경 시 알림 소리)
+  const playNotificationSound = useCallback(async () => {
     if (!soundEnabled) {
       return;
     }
 
     try {
+      // 진동 재생 (알림 효과 강화)
       if (Platform.OS === 'ios') {
-        Vibration.vibrate([50, 30, 80]);
+        Vibration.vibrate([100, 50, 100, 50, 200]);
       } else {
-        Vibration.vibrate([50, 30, 80]);
+        Vibration.vibrate([100, 50, 100, 50, 200]);
+      }
+
+      // 알림 소리 재생 (expo-av 사용)
+      try {
+        // 기존 사운드가 있으면 정리
+        if (soundRef.current) {
+          await soundRef.current.unloadAsync();
+        }
+
+        // 알림음 파일 재생
+        // assets/sounds/notification.mp3 파일 사용
+        try {
+          const { sound } = await Audio.Sound.createAsync(
+            require('../../../assets/sounds/notification.mp3'),
+            { shouldPlay: true, volume: 1.0, isLooping: false }
+          );
+          
+          soundRef.current = sound;
+          
+          // 사운드 재생 완료 후 정리
+          sound.setOnPlaybackStatusUpdate((status: any) => {
+            if (status.isLoaded && status.didJustFinish) {
+              sound.unloadAsync().catch(() => {});
+              soundRef.current = null;
+            }
+          });
+        } catch (requireError) {
+          // 알림음 파일 로드 실패 시 진동만 사용
+        }
+      } catch (audioError) {
+        // 오디오 재생 실패 시 진동만 사용 (정상 동작)
       }
     } catch (error) {
+      // 전체 실패 시 기본 진동
       try {
         Vibration.vibrate(100);
       } catch (fallbackError) {
-        // 진동 실패 시 무시
+        // 진동도 실패 시 무시
       }
     }
   }, [soundEnabled]);
