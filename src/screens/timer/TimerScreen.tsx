@@ -232,16 +232,10 @@ const TimerScreen: React.FC = () => {
     if (isRunning) {
       interval = setInterval(() => {
         setRemaining((prev) => {
-          if (prev > 0) return prev - 1;
-          // 타이머 종료 시 - 무한 루프 방지를 위해 즉시 정지
-          setIsRunning(false);
-          // 다음 tick에서 handleSwitch 호출
-          setTimeout(() => {
-            console.log('타이머 종료 - handleSwitch 호출');
-            // 모드전환 알림음 재생 (playNotificationSound 내부에서 soundEnabled 확인)
-            playNotificationSound();
-            handleSwitch();
-          }, 0);
+          if (prev > 0) {
+            return prev - 1;
+          }
+          // 타이머 종료 시 - 0이 되면 자동으로 모드 전환
           return 0;
         });
       }, 1000);
@@ -249,7 +243,21 @@ const TimerScreen: React.FC = () => {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isRunning, isStudy]);
+  }, [isRunning, isStudy, studyMinutes, breakMinutes]);
+
+  // remaining이 0이 되면 자동으로 모드 전환
+  useEffect(() => {
+    if (remaining === 0 && isRunning) {
+      // 타이머 정지
+      setIsRunning(false);
+      // 모드전환 알림음 재생
+      playNotificationSound();
+      // 모드 전환 실행 (약간의 지연을 두어 상태 업데이트가 완료되도록)
+      setTimeout(() => {
+        handleSwitch();
+      }, 100);
+    }
+  }, [remaining, isRunning, handleSwitch, playNotificationSound]);
 
   // 게이지바 애니메이션 효과 (모드 전환 시)
   useEffect(() => {
@@ -524,9 +532,6 @@ const TimerScreen: React.FC = () => {
   }, [isMiniMode]);
 
   const handleSwitch = useCallback(() => {
-    console.log('handleSwitch 호출됨 - 현재 soundEnabled:', soundEnabled);
-    setIsRunning(false);
-    
     // 게이지바 리셋 애니메이션 시작
     resetGaugeAnimation();
     
@@ -545,16 +550,16 @@ const TimerScreen: React.FC = () => {
     
     // 모드 전환 및 새 모드 시작 시간 설정
     const newStartTime = new Date();
+    const newIsStudy = !isStudy; // 새 모드
+    
     if (isStudy) {
       // 공부 → 휴식
-      console.log('공부 → 휴식 모드전환');
       setIsStudy(false);
       setRestStartTime(newStartTime);
       setRemaining(breakMinutes * 60);
       setCycle((c) => c + 1);
     } else {
       // 휴식 → 공부
-      console.log('휴식 → 공부 모드전환');
       setIsStudy(true);
       setStudyStartTime(newStartTime);
       setRemaining(studyMinutes * 60);
@@ -562,17 +567,16 @@ const TimerScreen: React.FC = () => {
     
     // 새 모드 기록 추가
     setModeHistory(prev => [...prev, {
-      mode: !isStudy ? 'study' : 'rest',
+      mode: newIsStudy ? 'study' : 'rest',
       startTime: newStartTime
     }]);
     
-    // 효과음 재생은 이미 타이머 종료 시점에서 처리했으므로 여기서는 로그만 출력
-    console.log('handleSwitch 내부 - 모드전환 완료');
-    console.log('현재 soundEnabled 상태:', soundEnabled);
-    
-    // 즉시 타이머 재시작
-    setIsRunning(true);
-  }, [soundEnabled, isStudy, studyMinutes, breakMinutes]);
+    // 모드 전환 후 즉시 타이머 재시작
+    // setTimeout을 사용하여 상태 업데이트가 완료된 후 재시작
+    setTimeout(() => {
+      setIsRunning(true);
+    }, 200);
+  }, [isStudy, studyMinutes, breakMinutes, resetGaugeAnimation]);
 
   // soundEnabled 상태 변경 감지
   useEffect(() => {
