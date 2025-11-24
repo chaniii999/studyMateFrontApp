@@ -107,10 +107,12 @@ export const scheduleService = {
   },
 
   // 완료율 업데이트
+  // 백엔드 API: PUT /api/schedule/{scheduleId}/completion-rate?completionRate={completionRate}
   async updateCompletionRate(scheduleId: string, completionRate: number): Promise<ScheduleResponse> {
-    const response = await apiClient.patch<ScheduleResponse>(`/schedule/${scheduleId}/completion`, { completionRate });
-    if (!response.data) {
-      throw new Error('완료율 업데이트에 실패했습니다.');
+    // 쿼리 파라미터로 completionRate 전달
+    const response = await apiClient.put<ScheduleResponse>(`/schedule/${scheduleId}/completion-rate?completionRate=${completionRate}`);
+    if (!response.success || !response.data) {
+      throw new Error(response.message || '완료율 업데이트에 실패했습니다.');
     }
     return response.data;
   },
