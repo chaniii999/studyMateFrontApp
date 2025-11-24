@@ -223,41 +223,46 @@ const TimerScreen: React.FC = () => {
       if (interval) clearInterval(interval);
     };
   }, [modeHistory, isRunning]);
-  
 
-
-  // 타이머 진행
-  useEffect(() => {
-    let interval: NodeJS.Timeout | undefined;
-    if (isRunning) {
-      interval = setInterval(() => {
-        setRemaining((prev) => {
-          if (prev > 0) {
-            return prev - 1;
-          }
-          // 타이머 종료 시 - 0이 되면 자동으로 모드 전환
-          return 0;
-        });
-      }, 1000);
+  // 효과음 재생 함수 (Enter 키 느낌의 진동 패턴)
+  const playNotificationSound = useCallback(() => {
+    if (!soundEnabled) {
+      return;
     }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isRunning, isStudy, studyMinutes, breakMinutes]);
 
-  // remaining이 0이 되면 자동으로 모드 전환
-  useEffect(() => {
-    if (remaining === 0 && isRunning) {
-      // 타이머 정지
-      setIsRunning(false);
-      // 모드전환 알림음 재생
-      playNotificationSound();
-      // 모드 전환 실행 (약간의 지연을 두어 상태 업데이트가 완료되도록)
-      setTimeout(() => {
-        handleSwitch();
-      }, 100);
+    try {
+      if (Platform.OS === 'ios') {
+        Vibration.vibrate([50, 30, 80]);
+      } else {
+        Vibration.vibrate([50, 30, 80]);
+      }
+    } catch (error) {
+      try {
+        Vibration.vibrate(100);
+      } catch (fallbackError) {
+        // 진동 실패 시 무시
+      }
     }
-  }, [remaining, isRunning, handleSwitch, playNotificationSound]);
+  }, [soundEnabled]);
+
+  // 모드 전환 시 게이지바를 0으로 리셋 후 다시 시작
+  const resetGaugeAnimation = useCallback(() => {
+    Animated.sequence([
+      Animated.timing(gaugeAnimatedValue, {
+        toValue: 0,
+        duration: 600,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: false,
+      }),
+      Animated.delay(200),
+      Animated.timing(gaugeAnimatedValue, {
+        toValue: 0,
+        duration: 200,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: false,
+      }),
+    ]).start();
+  }, []);
 
   // 게이지바 애니메이션 효과 (모드 전환 시)
   useEffect(() => {
@@ -466,28 +471,6 @@ const TimerScreen: React.FC = () => {
     setModeHistory([]);
   };
 
-  // 모드 전환 시 게이지바를 0으로 리셋 후 다시 시작
-  const resetGaugeAnimation = useCallback(() => {
-    Animated.sequence([
-      // 먼저 0으로 부드럽게 되돌리기
-      Animated.timing(gaugeAnimatedValue, {
-        toValue: 0,
-        duration: 600,
-        easing: Easing.in(Easing.quad),
-        useNativeDriver: false,
-      }),
-      // 잠시 멈춤
-      Animated.delay(200),
-      // 새로운 진행률로 시작
-      Animated.timing(gaugeAnimatedValue, {
-        toValue: 0, // 새로 시작하므로 0에서 시작
-        duration: 200,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: false,
-      }),
-    ]).start();
-  }, []);
-
   // 미니모드 토글 함수
   const toggleMiniMode = useCallback(() => {
     const toMini = !isMiniMode;
@@ -578,10 +561,34 @@ const TimerScreen: React.FC = () => {
     }, 200);
   }, [isStudy, studyMinutes, breakMinutes, resetGaugeAnimation]);
 
-  // soundEnabled 상태 변경 감지
+  // 타이머 진행
   useEffect(() => {
-    console.log('soundEnabled 상태 변경됨:', soundEnabled);
-  }, [soundEnabled]);
+    let interval: NodeJS.Timeout | undefined;
+    if (isRunning) {
+      interval = setInterval(() => {
+        setRemaining((prev) => {
+          if (prev > 0) {
+            return prev - 1;
+          }
+          return 0;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isRunning, isStudy, studyMinutes, breakMinutes]);
+
+  // remaining이 0이 되면 자동으로 모드 전환
+  useEffect(() => {
+    if (remaining === 0 && isRunning) {
+      setIsRunning(false);
+      playNotificationSound();
+      setTimeout(() => {
+        handleSwitch();
+      }, 100);
+    }
+  }, [remaining, isRunning, handleSwitch, playNotificationSound]);
 
 
 
@@ -597,36 +604,6 @@ const TimerScreen: React.FC = () => {
   const handleSoundToggle = () => {
     setSoundEnabled(prev => !prev);
   };
-
-    // 효과음 재생 함수 (Enter 키 느낌의 진동 패턴)
-  const playNotificationSound = useCallback(() => {
-    if (!soundEnabled) {
-      return;
-    }
-
-    try {
-      // Enter 키를 누르는 느낌의 진동 패턴
-      // 짧고 강한 진동으로 키보드 타이핑 느낌을 표현
-      if (Platform.OS === 'ios') {
-        // iOS: 키보드 입력 느낌의 진동 패턴
-        Vibration.vibrate([50, 30, 80]);
-        console.log('iOS Enter 키 진동 재생');
-      } else {
-        // Android: 동일한 패턴 적용
-        Vibration.vibrate([50, 30, 80]);
-        console.log('Android Enter 키 진동 재생');
-      }
-      
-    } catch (error) {
-      console.log('진동 재생 에러:', error);
-      // 에러 시 기본 진동으로 대체
-      try {
-        Vibration.vibrate(100);
-      } catch (fallbackError) {
-        console.log('기본 진동도 실패:', fallbackError);
-      }
-    }
-  }, [soundEnabled]);
 
   // 설정 다이얼 핸들러
   const handleSettings = () => {
@@ -722,12 +699,7 @@ const TimerScreen: React.FC = () => {
       }
     });
     
-    // 최소 1초 이상의 시간이 있어야 저장
-    if (finalStudySeconds === 0 && finalRestSeconds === 0) {
-      Alert.alert('알림', '최소 1초 이상의 시간을 기록해주세요.');
-      return;
-    }
-    
+    // 최소 시간 제한 없이 저장 가능 (타이머 종료 시 몇 초만 해도 저장 가능)
     const mode = `${studyMinutes}/${breakMinutes}`; // 포모도로 모드
     const summary = '';
     
